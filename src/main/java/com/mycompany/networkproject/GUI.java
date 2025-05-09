@@ -289,15 +289,55 @@ public class GUI extends javax.swing.JFrame {
     }
 
     private void ortakButonTiklama(ActionEvent evt) {
-        Button tiklanan = (Button) evt.getSource();
-        for (Tas tas : (oyuncuNumarasi == 1 ? siyahTaslar : beyazTaslar)) {
-            if (tas.getButon() == tiklanan) {
-                secilenTas = tas;
-                tiklanan.setBackground(Color.RED);
-                break;
+    Button tiklanan = (Button) evt.getSource();
+
+    for (Tas tas : (oyuncuNumarasi == 1 ? siyahTaslar : beyazTaslar)) {
+        if (tas.getButon() == tiklanan) {
+            int ucgenNo = tas.getUcgenNo();
+            JLabel ucgen = ucgenler[ucgenNo];
+
+            // 🔍 GUI'deki en üstteki butonu Y koordinatına göre bul
+            Component[] comps = ucgen.getComponents();
+            Button enUstButon = null;
+            int enUstY = (ucgenNo <= 11) ? -1 : Integer.MAX_VALUE;
+
+            for (Component comp : comps) {
+                if (comp instanceof Button && comp.isVisible()) {
+                    int y = comp.getY();
+                    if (ucgenNo <= 11) {
+                        if (y > enUstY) {
+                            enUstY = y;
+                            enUstButon = (Button) comp;
+                        }
+                    } else {
+                        if (y < enUstY) {
+                            enUstY = y;
+                            enUstButon = (Button) comp;
+                        }
+                    }
+                }
             }
+
+            // ❌ En üstteki taş değilse reddet
+            if (enUstButon != tiklanan) {
+                JOptionPane.showMessageDialog(null, "Sadece en üstteki taşı oynayabilirsin!");
+                return;
+            }
+
+            // 🔁 Öncekini sıfırla
+            if (secilenTas != null && secilenTas.getButon() != null) {
+                secilenTas.getButon().setBackground(oyuncuNumarasi == 1 ? Color.BLACK : Color.WHITE);
+            }
+
+            secilenTas = tas;
+            secilenButonMouse = tiklanan;
+            tiklanan.setBackground(Color.RED);
+            System.out.println("✅ Oyuncu " + oyuncuNumarasi + " taş seçti: " + tiklanan.getName());
+            break;
         }
     }
+}
+
 
     private int pozisyonNumarasiniBul(Button buton) {
         String name = buton.getName();  // örnek: button_5_3
@@ -504,6 +544,7 @@ public class GUI extends javax.swing.JFrame {
                     e.printStackTrace();
                 }
             }
+            
         }
 
     }
@@ -580,6 +621,7 @@ public class GUI extends javax.swing.JFrame {
         jLabelucgen_23 = new javax.swing.JLabel();
         button_23_0 = new java.awt.Button();
         button_23_1 = new java.awt.Button();
+        jLabel2 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMaximumSize(new java.awt.Dimension(600, 500));
@@ -730,6 +772,9 @@ public class GUI extends javax.swing.JFrame {
         button_23_1.setBackground(new java.awt.Color(0, 0, 0));
         jLayeredPane1.add(button_23_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 412, 30, 30));
 
+        jLabel2.setText("jLabel2");
+        jLayeredPane1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 340, -1, 130));
+
         getContentPane().add(jLayeredPane1);
         jLayeredPane1.setBounds(0, 0, 610, 540);
 
@@ -859,6 +904,7 @@ public class GUI extends javax.swing.JFrame {
     private java.awt.Button button_7_1;
     private java.awt.Button button_7_2;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabelZar1;
     private javax.swing.JLabel jLabelucgen_0;
     private javax.swing.JLabel jLabelucgen_1;
