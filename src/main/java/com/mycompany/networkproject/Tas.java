@@ -71,6 +71,14 @@ public class Tas {
     // İstersen ikon vs. varsa kaldırabilirsin: buton.setIcon(null);
     // Ama görünmez yapma!
 }
+//  public int getPozisyon(Button[][] butonlar) {
+//    for (int i = 0; i < 5; i++) {
+//        if (butonlar[ucgenNo][i] == this.buton) return i;
+//    }
+//    return -1;
+//}
+
+
 
 //    public void tasGizle() {
 //        buton.setVisible(false);

@@ -6,6 +6,8 @@ package com.mycompany.networkproject;
 
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,7 +31,9 @@ public class GUI extends javax.swing.JFrame {
      * Creates new form GUI
      */
     private Client client;
-    private int oyuncuSirasi = 0;  // 0 = değil, 1 veya 2 ise sırası
+    private int oyuncuNumarasi = 0;  // 0 = değil, 1 veya 2 ise sırası
+    private int siradakiOyuncu = 0;
+
     boolean oyunBasladi = false;
     boolean ilkTur = true;
     int ilkZar1 = 0;
@@ -43,304 +47,270 @@ public class GUI extends javax.swing.JFrame {
     private int[] zarlar = new int[2];  // Örneğin zarlar[0] = 3, zarlar[1] = 5
     // Tüm butonlar
     Button[][] butonlar = new Button[24][5];
-    
+
     private Button secilenButon = null;
 
-
     Random random = new Random();
+    private javax.swing.JLabel[] ucgenler;
+    private java.awt.Button secilenButonMouse = null;  // fare ile taşımada kullanılacak
 
     public GUI() {
-
         initComponents();
-        client = new Client(this);
-        client.connect("localhost", 12345);
-        jLayeredPane1.setLayer(jLabel1, 0);  // Arka plan
+
+        // Oyuncu bağlanmadan zar atılamaz
+        zarAtButton.setEnabled(false);
+
+        // Arka plan katmanı en arkada, butonlar önde
+        jLayeredPane1.setLayer(jLabel1, 0);
         for (int i = 0; i < jLayeredPane1.getComponentCount(); i++) {
-            java.awt.Component c = jLayeredPane1.getComponent(i);
-            if (c instanceof java.awt.Button) {
+            Component c = jLayeredPane1.getComponent(i);
+            if (c instanceof Button) {
                 jLayeredPane1.setLayer(c, 1);
             }
         }
 
-        zarAtButton.setEnabled(false); // ❗ Oyuncu eşleşmeden zar atamaz en son bunu ekledim
+        // 24 üçgeni dizisine yerleştir
+        ucgenler = new JLabel[]{
+            jLabelucgen_0, jLabelucgen_1, jLabelucgen_2, jLabelucgen_3, jLabelucgen_4,
+            jLabelucgen_5, jLabelucgen_6, jLabelucgen_7, jLabelucgen_8, jLabelucgen_9,
+            jLabelucgen_10, jLabelucgen_11, jLabelucgen_12, jLabelucgen_13, jLabelucgen_14,
+            jLabelucgen_15, jLabelucgen_16, jLabelucgen_17, jLabelucgen_18, jLabelucgen_19,
+            jLabelucgen_20, jLabelucgen_21, jLabelucgen_22, jLabelucgen_23
+        };
 
-        // Siyah taşlar (Oyuncu 1)
-// Siyah taşlar (Oyuncu 1)
-        siyahTaslar.add(new Tas(23, 0, 1, button_23_0));
-        siyahTaslar.add(new Tas(23, 1, 1, button_23_1));
-
-        siyahTaslar.add(new Tas(5, 0, 1, button_5_0));
-        siyahTaslar.add(new Tas(5, 1, 1, button_5_1));
-        siyahTaslar.add(new Tas(5, 2, 1, button_5_2));
-        siyahTaslar.add(new Tas(5, 3, 1, button_5_3));
-        siyahTaslar.add(new Tas(5, 4, 1, button_5_4));
-
-        siyahTaslar.add(new Tas(7, 2, 1, button_7_2));
-        siyahTaslar.add(new Tas(7, 3, 1, button_7_3));
-        siyahTaslar.add(new Tas(7, 4, 1, button_7_4));
-
-        siyahTaslar.add(new Tas(12, 0, 1, button_12_0));
-        siyahTaslar.add(new Tas(12, 1, 1, button_12_1));
-        siyahTaslar.add(new Tas(12, 2, 1, button_12_2));
-        siyahTaslar.add(new Tas(12, 3, 1, button_12_3));
-        siyahTaslar.add(new Tas(12, 4, 1, button_12_4));
-
-// Beyaz taşlar (Oyuncu 2)
-        beyazTaslar.add(new Tas(11, 0, 2, button_11_0));
-        beyazTaslar.add(new Tas(11, 1, 2, button_11_1));
-        beyazTaslar.add(new Tas(11, 2, 2, button_11_2));
-        beyazTaslar.add(new Tas(11, 3, 2, button_11_3));
-        beyazTaslar.add(new Tas(11, 4, 2, button_11_4));
-
-        beyazTaslar.add(new Tas(0, 3, 2, button_0_3));
-        beyazTaslar.add(new Tas(0, 4, 2, button_0_4));
-
-        beyazTaslar.add(new Tas(16, 0, 2, button_16_0));
-        beyazTaslar.add(new Tas(16, 1, 2, button_16_1));
-        beyazTaslar.add(new Tas(16, 2, 2, button_16_2));
-
-        beyazTaslar.add(new Tas(18, 0, 2, button_18_0));
-        beyazTaslar.add(new Tas(18, 1, 2, button_18_1));
-        beyazTaslar.add(new Tas(18, 2, 2, button_18_2));
-        beyazTaslar.add(new Tas(18, 3, 2, button_18_3));
-        beyazTaslar.add(new Tas(18, 4, 2, button_18_4));
-
-        for (Tas tas : siyahTaslar) {
-            tas.tasGorunurYap();
-        }
-        for (Tas tas : beyazTaslar) {
-            tas.tasGorunurYap();
+        // Tüm butonlar null olarak başlatılıyor
+        for (int i = 0; i < 24; i++) {
+            for (int j = 0; j < 5; j++) {
+                butonlar[i][j] = null;
+            }
         }
 
-        // 0–23 üçgenleri, her biri 5 pozisyon
-        butonlar[0][0] = button_0_0;
-        butonlar[0][1] = button_0_1;
-        butonlar[0][2] = button_0_2;
-        butonlar[0][3] = button_0_3;
-        butonlar[0][4] = button_0_4;
-        butonlar[1][0] = button_1_0;
-        butonlar[1][1] = button_1_1;
-        butonlar[1][2] = button_1_2;
-        butonlar[1][3] = button_1_3;
-        butonlar[1][4] = button_1_4;
-        butonlar[2][0] = button_2_0;
-        butonlar[2][1] = button_2_1;
-        butonlar[2][2] = button_2_2;
-        butonlar[2][3] = button_2_3;
-        butonlar[2][4] = button_2_4;
-        butonlar[3][0] = button_3_0;
-        butonlar[3][1] = button_3_1;
-        butonlar[3][2] = button_3_2;
-        butonlar[3][3] = button_3_3;
-        butonlar[3][4] = button_3_4;
-        butonlar[4][0] = button_4_0;
-        butonlar[4][1] = button_4_1;
-        butonlar[4][2] = button_4_2;
-        butonlar[4][3] = button_4_3;
-        butonlar[4][4] = button_4_4;
-        butonlar[5][0] = button_5_0;
-        butonlar[5][1] = button_5_1;
-        butonlar[5][2] = button_5_2;
-        butonlar[5][3] = button_5_3;
-        butonlar[5][4] = button_5_4;
-        butonlar[6][0] = button_6_0;
-        butonlar[6][1] = button_6_1;
-        butonlar[6][2] = button_6_2;
-        butonlar[6][3] = button_6_3;
-        butonlar[6][4] = button_6_4;
-        butonlar[7][0] = button_7_0;
-        butonlar[7][1] = button_7_1;
-        butonlar[7][2] = button_7_2;
-        butonlar[7][3] = button_7_3;
-        butonlar[7][4] = button_7_4;
-        butonlar[8][0] = button_8_0;
-        butonlar[8][1] = button_8_1;
-        butonlar[8][2] = button_8_2;
-        butonlar[8][3] = button_8_3;
-        butonlar[8][4] = button_8_4;
-        butonlar[9][0] = button_9_0;
-        butonlar[9][1] = button_9_1;
-        butonlar[9][2] = button_9_2;
-        butonlar[9][3] = button_9_3;
-        butonlar[9][4] = button_9_4;
-        butonlar[10][0] = button_10_0;
-        butonlar[10][1] = button_10_1;
-        butonlar[10][2] = button_10_2;
-        butonlar[10][3] = button_10_3;
-        butonlar[10][4] = button_10_4;
-        butonlar[11][0] = button_11_0;
-        butonlar[11][1] = button_11_1;
-        butonlar[11][2] = button_11_2;
-        butonlar[11][3] = button_11_3;
-        butonlar[11][4] = button_11_4;
-        butonlar[12][0] = button_12_0;
-        butonlar[12][1] = button_12_1;
-        butonlar[12][2] = button_12_2;
-        butonlar[12][3] = button_12_3;
-        butonlar[12][4] = button_12_4;
-        butonlar[13][0] = button_13_0;
-        butonlar[13][1] = button_13_1;
-        butonlar[13][2] = button_13_2;
-        butonlar[13][3] = button_13_3;
-        butonlar[13][4] = button_13_4;
-        butonlar[14][0] = button_14_0;
-        butonlar[14][1] = button_14_1;
-        butonlar[14][2] = button_14_2;
-        butonlar[14][3] = button_14_3;
-        butonlar[14][4] = button_14_4;
-        butonlar[15][0] = button_15_0;
-        butonlar[15][1] = button_15_1;
-        butonlar[15][2] = button_15_2;
-        butonlar[15][3] = button_15_3;
-        butonlar[15][4] = button_15_4;
-        butonlar[16][0] = button_16_0;
-        butonlar[16][1] = button_16_1;
-        butonlar[16][2] = button_16_2;
-        butonlar[16][3] = button_16_3;
-        butonlar[16][4] = button_16_4;
-        butonlar[17][0] = button_17_0;
-        butonlar[17][1] = button_17_1;
-        butonlar[17][2] = button_17_2;
-        butonlar[17][3] = button_17_3;
-        butonlar[17][4] = button_17_4;
-        butonlar[18][0] = button_18_0;
-        butonlar[18][1] = button_18_1;
-        butonlar[18][2] = button_18_2;
-        butonlar[18][3] = button_18_3;
-        butonlar[18][4] = button_18_4;
-        butonlar[19][0] = button_19_0;
-        butonlar[19][1] = button_19_1;
-        butonlar[19][2] = button_19_2;
-        butonlar[19][3] = button_19_3;
-        butonlar[19][4] = button_19_4;
-        butonlar[20][0] = button_20_0;
-        butonlar[20][1] = button_20_1;
-        butonlar[20][2] = button_20_2;
-        butonlar[20][3] = button_20_3;
-        butonlar[20][4] = button_20_4;
-        butonlar[21][0] = button_21_0;
-        butonlar[21][1] = button_21_1;
-        butonlar[21][2] = button_21_2;
-        butonlar[21][3] = button_21_3;
-        butonlar[21][4] = button_21_4;
-        butonlar[22][0] = button_22_0;
-        butonlar[22][1] = button_22_1;
-        butonlar[22][2] = button_22_2;
-        butonlar[22][3] = button_22_3;
-        butonlar[22][4] = button_22_4;
-        butonlar[23][0] = button_23_0;
-        butonlar[23][1] = button_23_1;
-        butonlar[23][2] = button_23_2;
-        butonlar[23][3] = button_23_3;
-        butonlar[23][4] = button_23_4;
+        // Taşları oluştur ve dizilere ekle
+        Tas[] tasDizisi = new Tas[]{
+            // Siyah taşlar (oyuncu 1)
+            new Tas(23, 0, 1, button_23_0), new Tas(23, 1, 1, button_23_1),
+            new Tas(5, 0, 1, button_5_0), new Tas(5, 1, 1, button_5_1),
+            new Tas(5, 2, 1, button_5_2), new Tas(5, 3, 1, button_5_3), new Tas(5, 4, 1, button_5_4),
+            new Tas(7, 0, 1, button_7_0), new Tas(7, 1, 1, button_7_1), new Tas(7, 2, 1, button_7_2),
+            new Tas(12, 0, 1, button_12_0), new Tas(12, 1, 1, button_12_1), new Tas(12, 2, 1, button_12_2),
+            new Tas(12, 3, 1, button_12_3), new Tas(12, 4, 1, button_12_4),
+            // Beyaz taşlar (oyuncu 2)
+            new Tas(11, 0, 2, button_11_0), new Tas(11, 1, 2, button_11_1), new Tas(11, 2, 2, button_11_2),
+            new Tas(11, 3, 2, button_11_3), new Tas(11, 4, 2, button_11_4),
+            new Tas(0, 0, 2, button_0_0), new Tas(0, 1, 2, button_0_1),
+            new Tas(16, 0, 2, button_16_0), new Tas(16, 1, 2, button_16_1), new Tas(16, 2, 2, button_16_2),
+            new Tas(18, 0, 2, button_18_0), new Tas(18, 1, 2, button_18_1), new Tas(18, 2, 2, button_18_2),
+            new Tas(18, 3, 2, button_18_3), new Tas(18, 4, 2, button_18_4)
+        };
 
-//        for (java.awt.Component comp : jLayeredPane1.getComponents()) {
-//            if (comp instanceof java.awt.Button) {
-//                java.awt.Button btn = (java.awt.Button) comp;
-//                btn.addActionListener(new java.awt.event.ActionListener() {
-//                    public void actionPerformed(java.awt.event.ActionEvent evt) {
-//                        ortakButonTiklama(evt);
-//                    }
-//                });
-//            }
-//        }
+        for (Tas tas : tasDizisi) {
+            int ucgenIndex = tas.getUcgenNo();
+            JLabel ucgen = ucgenler[ucgenIndex];
+            Button buton = tas.getButon();
+
+            ucgen.setLayout(null);
+            tas.tasGorunurYap();
+
+            // Şu anda görünür olan kaç buton var → kaçıncı sırada yerleştirilecek?
+            int mevcut = 0;
+            for (Component comp : ucgen.getComponents()) {
+                if (comp instanceof Button && comp.isVisible()) {
+                    mevcut++;
+                }
+            }
+
+            buton.setLocation(0, ucgenIndex <= 11 ? mevcut * 30 : ucgen.getHeight() - 30 - mevcut * 30);
+            buton.setName("button_" + ucgenIndex + "_" + mevcut);
+            System.out.println("🧱 Başlangıçta eklenen buton: " + buton.getName());
+
+            buton.setVisible(true);
+            ucgen.add(buton);
+            butonlar[ucgenIndex][mevcut] = buton;
+
+            // ActionListener ekle
+            buton.addActionListener(evt -> ortakButonTiklama(evt));
+
+            // Dizilere ekle
+            if (tas.getOyuncuNo() == 1) {
+                siyahTaslar.add(tas);
+            } else {
+                beyazTaslar.add(tas);
+            }
+        }
+
+        // Taş seçme ve üçgene taşıma listener'ları
+        tasSecmeVeTasimaAyarlariniYap();
+
+        // Client başlat
+        client = new Client(this);
+        client.connect("localhost", 12345);
+    }
+
+    private void tasSecmeVeTasimaAyarlariniYap() {
+        // 🎯 1. Butonlara taş seçme action'ı ekle
         for (int ucgen = 0; ucgen < 24; ucgen++) {
-            for (int pozisyon = 0; pozisyon < 5; pozisyon++) {
-                Button btn = ucgenButonunuAl(ucgen, pozisyon);
+            for (int poz = 0; poz < 5; poz++) {
+                Button btn = butonlar[ucgen][poz];
                 if (btn != null) {
-                    btn.setName("button_" + ucgen + "_" + pozisyon);
-                    btn.addActionListener(evt -> ortakButonTiklama(evt));
-                    System.out.println("Tıklanan buton: " + btn.getName());
+                    btn.addActionListener(e -> {
+                        if (btn.isVisible()) {
+                            ArrayList<Tas> aktifTasListesi = (oyuncuNumarasi == 1) ? siyahTaslar : beyazTaslar;
+                            for (Tas tas : aktifTasListesi) {
+                                if (tas.getButon() == btn) {
+                                    secilenButonMouse = btn;
+                                    System.out.println("✅ Oyuncu " + oyuncuNumarasi + " taş seçti: " + btn.getName());
+                                    return;
+                                }
+                            }
+                            JOptionPane.showMessageDialog(null, "Bu taş size ait değil!");
+                        }
+                    });
                 }
             }
         }
 
-    }
-    private void ortakButonTiklama(java.awt.event.ActionEvent evt) {
-    if (oyuncuSirasi != client.getOyuncuNumarasi()) {
-        JOptionPane.showMessageDialog(null, "Sıra sizde değil!");
-        return;
-    }
+        // 🎯 2. Üçgenlere (JLabel) mouse listener ekle → taş taşıma
+        for (int hedefUcgen = 0; hedefUcgen < ucgenler.length; hedefUcgen++) {
+            JLabel ucgen = ucgenler[hedefUcgen];
+            ucgen.setLayout(null);
 
-    Button tiklanan = (Button) evt.getSource();
-    System.out.println("🖱️ Tıklanan buton: " + tiklanan.getName());
-    System.out.println("Hedef buton görünür mü? → " + tiklanan.isVisible());
+            final int finalHedefUcgen = hedefUcgen;
 
-    // 🟥 Taş seçimi
-    if (secilenTas == null) {
-        if (!tiklanan.isVisible()) {
-            System.out.println("⚠️ Görünmez butona tıklandı, taş seçilemez.");
-            return;
+            ucgen.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseClicked(java.awt.event.MouseEvent evt) {
+                    if (secilenButonMouse != null) {
+                        System.out.println("⬇ Üçgene tıklandı: " + finalHedefUcgen);
+
+                        String name = secilenButonMouse.getName(); // örn: button_12_3
+                        String[] parts = name.substring(7).split("_");
+                        int eskiUcgen = Integer.parseInt(parts[0]);
+
+                        System.out.println("📍 Eski üçgen: " + eskiUcgen);
+                        System.out.println("🎯 Hedef üçgen: " + finalHedefUcgen);
+
+                        if ((oyuncuNumarasi == 1 && finalHedefUcgen >= eskiUcgen)
+                                || (oyuncuNumarasi == 2 && finalHedefUcgen <= eskiUcgen)) {
+                            System.out.println("❌ Hatalı yön (oyuncu: " + oyuncuNumarasi + ")");
+                            JOptionPane.showMessageDialog(null, "Ters yöne hamle yapılamaz!");
+                            return;
+                        }
+
+                        int mesafe = Math.abs(finalHedefUcgen - eskiUcgen);
+                        System.out.println("🎲 Zarlar: " + zarlar[0] + ", " + zarlar[1]);
+                        System.out.println("📏 Mesafe: " + mesafe);
+
+                        if (zarlar[0] != mesafe && zarlar[1] != mesafe) {
+                            System.out.println("❌ Zarla uyumsuz hamle.");
+                            JOptionPane.showMessageDialog(null, "Zar ile uyumlu değil!");
+                            return;
+                        }
+
+                        java.awt.Container eskiParent = secilenButonMouse.getParent();
+                        eskiParent.remove(secilenButonMouse);
+
+                        int mevcutTasSayisi = 0;
+                        for (Component comp : ucgen.getComponents()) {
+                            if (comp instanceof Button && comp.isVisible()) {
+                                mevcutTasSayisi++;
+                            }
+                        }
+
+                        ucgen.add(secilenButonMouse);
+                        ucgen.setComponentZOrder(secilenButonMouse, 0);
+
+                        int ucgenHeight = ucgen.getHeight();
+                        int y = (finalHedefUcgen <= 11)
+                                ? 0 + mevcutTasSayisi * 30
+                                : ucgenHeight - 30 - mevcutTasSayisi * 30;
+
+                        secilenButonMouse.setLocation(0, y);
+                        secilenButonMouse.setBackground(oyuncuNumarasi == 1 ? Color.BLACK : Color.WHITE);
+                        String yeniIsim = "button_" + finalHedefUcgen + "_" + mevcutTasSayisi;
+
+                        secilenButonMouse.setName(yeniIsim);
+
+                        // 🔥 EKLENMESİ GEREKEN KRİTİK SATIR
+                        butonlar[finalHedefUcgen][mevcutTasSayisi] = secilenButonMouse;
+                        System.out.println("🔁 setName verildi: " + yeniIsim);
+
+                        ucgen.revalidate();
+                        ucgen.repaint();
+
+                        System.out.println("✅ Taş başarıyla taşındı.");
+
+                        // 🆕 Tas nesnesini güncelle
+                        ArrayList<Tas> aktifTasListesi = (oyuncuNumarasi == 1) ? siyahTaslar : beyazTaslar;
+                        for (Tas tas : aktifTasListesi) {
+                            if (tas.getButon() == secilenButonMouse) {
+                                tas.setUcgenNo(finalHedefUcgen);
+                                break;
+                            }
+                        }
+//                        //  HAMLE mesajı gönder (tüm client'lara yansıtmak için)
+//                        String butonName = secilenButonMouse.getName();
+//                        client.mesajGonder("HAMLE:" + eskiUcgen + "," + finalHedefUcgen + "," + butonName);
+//                        System.out.println("📤 Gönderilen mesaj: HAMLE:" + eskiUcgen + "," + finalHedefUcgen + "," + butonName);
+                        // 🔍 buton pozisyonunu bul (0-4)
+                        int pozisyon = -1;
+                        for (int i = 0; i < 5; i++) {
+                            if (butonlar[eskiUcgen][i] == secilenButonMouse) {
+                                pozisyon = i;
+                                break;
+                            }
+                        }
+
+                        if (pozisyon == -1) {
+                            System.err.println("❌ Pozisyon bulunamadı, mesaj gönderilmedi.");
+                        } else {
+                            // 📨 Doğru formatta mesaj gönder
+                            client.mesajGonder("HAMLE:" + eskiUcgen + "," + finalHedefUcgen + "," + pozisyon);
+                            System.out.println("📤 Gönderilen mesaj: HAMLE:" + eskiUcgen + "," + finalHedefUcgen + "," + pozisyon);
+                        }
+
+                        // 🎯 Zar tüket
+                        if (zarlar[0] == mesafe) {
+                            zarlar[0] = -1;
+                            System.out.println("🎯 Zar 1 (" + mesafe + ") kullanıldı.");
+                        } else if (zarlar[1] == mesafe) {
+                            zarlar[1] = -1;
+                            System.out.println("🎯 Zar 2 (" + mesafe + ") kullanıldı.");
+                        }
+
+                        if (zarlar[0] == -1 && zarlar[1] == -1) {
+                            System.out.println("⏭ Hamle bitti, sıra rakibe geçiyor.");
+                            client.mesajGonder("HAMLE_BITTI");
+                        }
+
+                        secilenButonMouse = null;
+                    }
+                }
+            });
         }
+    }
 
-        for (Tas tas : (oyuncuSirasi == 1 ? siyahTaslar : beyazTaslar)) {
+    private void ortakButonTiklama(ActionEvent evt) {
+        Button tiklanan = (Button) evt.getSource();
+        for (Tas tas : (oyuncuNumarasi == 1 ? siyahTaslar : beyazTaslar)) {
             if (tas.getButon() == tiklanan) {
                 secilenTas = tas;
-                tiklanan.setBackground(Color.RED); // Seçimi göster
-                System.out.println("🔴 Taş seçildi: Üçgen " + tas.getUcgenNo() + ", Pozisyon " + tas.getPozisyonNo());
-                return;
+                tiklanan.setBackground(Color.RED);
+                break;
             }
         }
-
-        System.out.println("⚠️ Taş bulunamadı.");
-        return;
     }
-
-    // 🟦 Taş taşıma işlemi
-    if (tiklanan.isVisible()) {
-        System.out.println("⚠️ Zaten dolu bir yere taşınamaz.");
-        return;
-    }
-
-    int hedefUcgen = ucgenNumarasiniBul(tiklanan);
-    int eskiUcgen = secilenTas.getUcgenNo();
-
-    // ❗ Hareket yönü kontrolü
-    if ((oyuncuSirasi == 1 && hedefUcgen >= eskiUcgen) ||
-        (oyuncuSirasi == 2 && hedefUcgen <= eskiUcgen)) {
-        JOptionPane.showMessageDialog(null, "Ters yöne hamle yapılamaz!");
-        return;
-    }
-
-    // ❗ Zar farkı (mutlak mesafe)
-    int hareketMesafesi = Math.abs(hedefUcgen - eskiUcgen);
-
-    System.out.println("🎲 Zarlar: " + zarlar[0] + " ve " + zarlar[1]);
-    System.out.println("🎯 Hareket mesafesi: " + hareketMesafesi);
-
-    if (hareketMesafesi != zarlar[0] && hareketMesafesi != zarlar[1]) {
-        JOptionPane.showMessageDialog(null, "Zar ile uyumlu değil!");
-        return;
-    }
-
-    // ✅ Hareketi uygula
-    secilenTas.getButon().setVisible(false);
-
-    tiklanan.setVisible(true);
-    tiklanan.setBackground(oyuncuSirasi == 1 ? Color.BLACK : Color.WHITE);
-
-    secilenTas.setButon(tiklanan);
-    secilenTas.setUcgenNo(hedefUcgen);
-    secilenTas.setPozisyonNo(pozisyonNumarasiniBul(tiklanan));
-
-    System.out.println("✅ Taş başarıyla taşındı!");
-    secilenTas = null;
-}
-
 
     private int pozisyonNumarasiniBul(Button buton) {
-    String name = buton.getName();  // örnek: button_5_3
-    if (name == null || !name.startsWith("button_")) {
-        return -1;
+        String name = buton.getName();  // örnek: button_5_3
+        if (name == null || !name.startsWith("button_")) {
+            return -1;
+        }
+        try {
+            String[] parts = name.substring(7).split("_");
+            return Integer.parseInt(parts[1]);  // ikinci kısım: pozisyon numarası
+        } catch (Exception e) {
+            return -1;
+        }
     }
-    try {
-        String[] parts = name.substring(7).split("_");
-        return Integer.parseInt(parts[1]);  // ikinci kısım: pozisyon numarası
-    } catch (Exception e) {
-        return -1;
-    }
-}
-
 
     private int ucgenNumarasiniBul(Button buton) {
         String name = buton.getName();  // örnek: button_5_3
@@ -355,7 +325,6 @@ public class GUI extends javax.swing.JFrame {
         }
     }
 
-
     public Button ucgenButonunuAl(int ucgenNo, int pozisyonNo) {
         if (ucgenNo >= 0 && ucgenNo < 24 && pozisyonNo >= 0 && pozisyonNo < 5) {
             return butonlar[ucgenNo][pozisyonNo];
@@ -364,6 +333,8 @@ public class GUI extends javax.swing.JFrame {
     }
 
     public void gelenMesajGoster(String mesaj) {
+        System.out.println("📩 gelenMesajGoster çağrıldı: " + mesaj);
+
         if (mesaj.startsWith("ILKZAR:")) {
             String veri = mesaj.substring(8).trim();
             if (!veri.isEmpty()) {
@@ -425,8 +396,9 @@ public class GUI extends javax.swing.JFrame {
         } else if (mesaj.startsWith("SIRA:")) {
             try {
                 int gelenSira = Integer.parseInt(mesaj.substring(5).trim());
+                siradakiOyuncu = gelenSira;  // ⬅ sıradaki oyuncuyu güncelle
 
-                if (gelenSira == oyuncuSirasi) {
+                if (siradakiOyuncu == oyuncuNumarasi) {
                     zarAtButton.setEnabled(true);
                     if (ilkTur && !oyunBasladi) {
                         JOptionPane.showMessageDialog(this, "🎯 Oyuna sen başlıyorsun!");
@@ -438,7 +410,6 @@ public class GUI extends javax.swing.JFrame {
             } catch (NumberFormatException e) {
                 System.err.println("SIRA mesajı hatalı: " + mesaj);
             }
-
         } else if (mesaj.equals("ILKTURBITTI")) {
             ilkTur = false;
             oyunBasladi = true;
@@ -451,7 +422,7 @@ public class GUI extends javax.swing.JFrame {
         } else if (mesaj.startsWith("OYUNCU:")) {
             try {
                 int num = Integer.parseInt(mesaj.substring(7).trim());
-                oyuncuSirasi = num;
+                oyuncuNumarasi = num;
                 client.setOyuncuNumarasi(num); // Oyuncu numarası Client içine setleniyor
 
                 JOptionPane.showMessageDialog(this, "🎮 Sen Oyuncu " + num + "'sin.");
@@ -463,11 +434,78 @@ public class GUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "🎲 Zarlar eşit! Tekrar atılıyor.");
             ilkTur = true;
             oyunBasladi = false;
-            zarAtButton.setEnabled(oyuncuSirasi == 1); // sadece oyuncu 1 başlasın
+            zarAtButton.setEnabled(oyuncuNumarasi == 1); // sadece oyuncu 1 başlasın
 
-        } else {
-            JOptionPane.showMessageDialog(this, mesaj);
+        } else if (mesaj.startsWith("HAMLE:")) {
+            String[] parts = mesaj.substring(6).split(",", 3);
+            if (parts.length == 3) {
+                try {
+                    int eskiUcgen = Integer.parseInt(parts[0].trim());
+                    int yeniUcgen = Integer.parseInt(parts[1].trim());
+                    int pozisyon = Integer.parseInt(parts[2].trim());
+
+                    Button tasBtn = butonlar[eskiUcgen][pozisyon];
+                    if (tasBtn == null) {
+                        System.err.println("❌ Belirtilen pozisyonda taş yok: " + eskiUcgen + ", poz: " + pozisyon);
+                        return;
+                    }
+
+                    // GUI'den eski konumdan çıkar
+                    Container eskiParent = tasBtn.getParent();
+                    if (eskiParent != null) {
+                        eskiParent.remove(tasBtn);
+                    }
+
+                    JLabel hedefUcgen = ucgenler[yeniUcgen];
+                    hedefUcgen.setLayout(null);
+
+                    int yeniPoz = 0;
+                    for (Component c : hedefUcgen.getComponents()) {
+                        if (c instanceof Button && c.isVisible()) {
+                            yeniPoz++;
+                        }
+                    }
+
+                    hedefUcgen.add(tasBtn);
+                    hedefUcgen.setComponentZOrder(tasBtn, 0);
+
+                    int y = (yeniUcgen <= 11)
+                            ? yeniPoz * 30
+                            : hedefUcgen.getHeight() - 30 - yeniPoz * 30;
+
+                    tasBtn.setLocation(0, y);
+                    tasBtn.setName("button_" + yeniUcgen + "_" + yeniPoz);
+                    tasBtn.setVisible(true);
+
+                    // Taş objesini de güncelle
+                    for (Tas t : siyahTaslar) {
+                        if (t.getButon() == tasBtn) {
+                            t.setUcgenNo(yeniUcgen);
+                            break;
+                        }
+                    }
+                    for (Tas t : beyazTaslar) {
+                        if (t.getButon() == tasBtn) {
+                            t.setUcgenNo(yeniUcgen);
+                            break;
+                        }
+                    }
+
+                    butonlar[eskiUcgen][pozisyon] = null;
+                    butonlar[yeniUcgen][yeniPoz] = tasBtn;
+
+                    hedefUcgen.revalidate();
+                    hedefUcgen.repaint();
+
+                    System.out.println("✅ Doğru taş senkronize edildi.");
+
+                } catch (Exception e) {
+                    System.err.println("HAMLE mesajı hatalı: " + mesaj);
+                    e.printStackTrace();
+                }
+            }
         }
+
     }
 
     public void hataGoster(String mesaj) {
@@ -485,129 +523,63 @@ public class GUI extends javax.swing.JFrame {
 
         jLayeredPane1 = new javax.swing.JLayeredPane();
         jLabel1 = new javax.swing.JLabel();
-        button_0_4 = new java.awt.Button();
-        button_0_3 = new java.awt.Button();
+        zarAtButton = new java.awt.Button();
+        jLabelZar1 = new javax.swing.JLabel();
+        jLabelzar2 = new javax.swing.JLabel();
+        jLabelucgen_0 = new javax.swing.JLabel();
+        button_0_1 = new java.awt.Button();
+        button_0_0 = new java.awt.Button();
+        jLabelucgen_1 = new javax.swing.JLabel();
+        jLabelucgen_2 = new javax.swing.JLabel();
+        jLabelucgen_3 = new javax.swing.JLabel();
+        jLabelucgen_4 = new javax.swing.JLabel();
+        jLabelucgen_5 = new javax.swing.JLabel();
         button_5_4 = new java.awt.Button();
         button_5_3 = new java.awt.Button();
         button_5_2 = new java.awt.Button();
         button_5_1 = new java.awt.Button();
         button_5_0 = new java.awt.Button();
-        button_7_4 = new java.awt.Button();
-        button_7_3 = new java.awt.Button();
+        jLabelucgen_6 = new javax.swing.JLabel();
+        jLabelucgen_7 = new javax.swing.JLabel();
         button_7_2 = new java.awt.Button();
+        button_7_1 = new java.awt.Button();
+        button_7_0 = new java.awt.Button();
+        jLabelucgen_8 = new javax.swing.JLabel();
+        jLabelucgen_9 = new javax.swing.JLabel();
+        jLabelucgen_10 = new javax.swing.JLabel();
+        jLabelucgen_11 = new javax.swing.JLabel();
         button_11_4 = new java.awt.Button();
         button_11_3 = new java.awt.Button();
         button_11_2 = new java.awt.Button();
         button_11_1 = new java.awt.Button();
         button_11_0 = new java.awt.Button();
+        jLabelucgen_12 = new javax.swing.JLabel();
         button_12_0 = new java.awt.Button();
         button_12_1 = new java.awt.Button();
         button_12_2 = new java.awt.Button();
         button_12_3 = new java.awt.Button();
         button_12_4 = new java.awt.Button();
+        jLabelucgen_13 = new javax.swing.JLabel();
+        jLabelucgen_14 = new javax.swing.JLabel();
+        jLabelucgen_15 = new javax.swing.JLabel();
+        jLabelucgen_16 = new javax.swing.JLabel();
         button_16_0 = new java.awt.Button();
         button_16_1 = new java.awt.Button();
         button_16_2 = new java.awt.Button();
+        jLabelucgen_17 = new javax.swing.JLabel();
+        jLabelucgen_18 = new javax.swing.JLabel();
         button_18_0 = new java.awt.Button();
         button_18_1 = new java.awt.Button();
         button_18_2 = new java.awt.Button();
         button_18_3 = new java.awt.Button();
         button_18_4 = new java.awt.Button();
+        jLabelucgen_19 = new javax.swing.JLabel();
+        jLabelucgen_20 = new javax.swing.JLabel();
+        jLabelucgen_21 = new javax.swing.JLabel();
+        jLabelucgen_22 = new javax.swing.JLabel();
+        jLabelucgen_23 = new javax.swing.JLabel();
         button_23_0 = new java.awt.Button();
         button_23_1 = new java.awt.Button();
-        zarAtButton = new java.awt.Button();
-        jLabelZar1 = new javax.swing.JLabel();
-        jLabelzar2 = new javax.swing.JLabel();
-        button_1_4 = new java.awt.Button();
-        button_1_3 = new java.awt.Button();
-        button_1_2 = new java.awt.Button();
-        button_1_1 = new java.awt.Button();
-        button_1_0 = new java.awt.Button();
-        button_0_2 = new java.awt.Button();
-        button_0_1 = new java.awt.Button();
-        button_0_0 = new java.awt.Button();
-        button_2_4 = new java.awt.Button();
-        button_2_3 = new java.awt.Button();
-        button_2_2 = new java.awt.Button();
-        button_2_1 = new java.awt.Button();
-        button_2_0 = new java.awt.Button();
-        button_3_4 = new java.awt.Button();
-        button_3_3 = new java.awt.Button();
-        button_3_2 = new java.awt.Button();
-        button_3_1 = new java.awt.Button();
-        button_3_0 = new java.awt.Button();
-        button_4_4 = new java.awt.Button();
-        button_4_3 = new java.awt.Button();
-        button_4_2 = new java.awt.Button();
-        button_4_1 = new java.awt.Button();
-        button_4_0 = new java.awt.Button();
-        button_6_4 = new java.awt.Button();
-        button_6_3 = new java.awt.Button();
-        button_6_2 = new java.awt.Button();
-        button_6_1 = new java.awt.Button();
-        button_6_0 = new java.awt.Button();
-        button_7_1 = new java.awt.Button();
-        button_7_0 = new java.awt.Button();
-        button_8_4 = new java.awt.Button();
-        button_8_3 = new java.awt.Button();
-        button_8_2 = new java.awt.Button();
-        button_8_1 = new java.awt.Button();
-        button_8_0 = new java.awt.Button();
-        button_9_4 = new java.awt.Button();
-        button_9_3 = new java.awt.Button();
-        button_9_2 = new java.awt.Button();
-        button_9_1 = new java.awt.Button();
-        button_9_0 = new java.awt.Button();
-        button_10_4 = new java.awt.Button();
-        button_10_3 = new java.awt.Button();
-        button_10_2 = new java.awt.Button();
-        button_10_1 = new java.awt.Button();
-        button_10_0 = new java.awt.Button();
-        button_23_2 = new java.awt.Button();
-        button_23_3 = new java.awt.Button();
-        button_22_0 = new java.awt.Button();
-        button_22_1 = new java.awt.Button();
-        button_22_2 = new java.awt.Button();
-        button_22_3 = new java.awt.Button();
-        button_22_4 = new java.awt.Button();
-        button_21_0 = new java.awt.Button();
-        button_21_1 = new java.awt.Button();
-        button_21_2 = new java.awt.Button();
-        button_21_3 = new java.awt.Button();
-        button_21_4 = new java.awt.Button();
-        button_20_0 = new java.awt.Button();
-        button_20_1 = new java.awt.Button();
-        button_20_2 = new java.awt.Button();
-        button_20_3 = new java.awt.Button();
-        button_20_4 = new java.awt.Button();
-        button_19_0 = new java.awt.Button();
-        button_19_1 = new java.awt.Button();
-        button_19_2 = new java.awt.Button();
-        button_19_3 = new java.awt.Button();
-        button_19_4 = new java.awt.Button();
-        button_17_0 = new java.awt.Button();
-        button_17_1 = new java.awt.Button();
-        button_17_2 = new java.awt.Button();
-        button_17_3 = new java.awt.Button();
-        button_17_4 = new java.awt.Button();
-        button_16_3 = new java.awt.Button();
-        button_16_4 = new java.awt.Button();
-        button_15_0 = new java.awt.Button();
-        button_15_1 = new java.awt.Button();
-        button_15_2 = new java.awt.Button();
-        button_15_3 = new java.awt.Button();
-        button_15_4 = new java.awt.Button();
-        button_14_0 = new java.awt.Button();
-        button_14_1 = new java.awt.Button();
-        button_14_2 = new java.awt.Button();
-        button_14_3 = new java.awt.Button();
-        button_14_4 = new java.awt.Button();
-        button_13_0 = new java.awt.Button();
-        button_13_1 = new java.awt.Button();
-        button_13_2 = new java.awt.Button();
-        button_13_3 = new java.awt.Button();
-        button_13_4 = new java.awt.Button();
-        button_23_4 = new java.awt.Button();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMaximumSize(new java.awt.Dimension(600, 500));
@@ -623,25 +595,30 @@ public class GUI extends javax.swing.JFrame {
         jLabel1.setFocusable(false);
         jLayeredPane1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 610, 500));
 
-        button_0_4.setBackground(new java.awt.Color(255, 255, 255));
-        button_0_4.setForeground(new java.awt.Color(255, 255, 255));
-        button_0_4.addActionListener(new java.awt.event.ActionListener() {
+        zarAtButton.setBackground(new java.awt.Color(255, 255, 255));
+        zarAtButton.setLabel("Zar at");
+        zarAtButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_0_4ActionPerformed(evt);
+                zarAtButtonActionPerformed(evt);
             }
         });
-        jLayeredPane1.add(button_0_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 31, 30, 30));
+        jLayeredPane1.add(zarAtButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 30, 50, 40));
+        jLayeredPane1.add(jLabelZar1, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 230, 30, 30));
+        jLayeredPane1.add(jLabelzar2, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 290, 30, 30));
+        jLayeredPane1.add(jLabelucgen_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 30, 30, 150));
 
-        button_0_3.setForeground(new java.awt.Color(255, 255, 255));
-        button_0_3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_0_3ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_0_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 62, 30, 30));
+        button_0_1.setBackground(new java.awt.Color(255, 255, 255));
+        jLayeredPane1.add(button_0_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 30, 30, 30));
+
+        button_0_0.setBackground(new java.awt.Color(255, 255, 255));
+        jLayeredPane1.add(button_0_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 60, 30, 30));
+        jLayeredPane1.add(jLabelucgen_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(425, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_5, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 30, 30, 150));
 
         button_5_4.setBackground(new java.awt.Color(0, 0, 0));
-        button_5_4.setForeground(new java.awt.Color(255, 255, 255));
         jLayeredPane1.add(button_5_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 30, 30, 30));
 
         button_5_3.setBackground(new java.awt.Color(0, 0, 0));
@@ -655,15 +632,21 @@ public class GUI extends javax.swing.JFrame {
 
         button_5_0.setBackground(new java.awt.Color(0, 0, 0));
         jLayeredPane1.add(button_5_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 150, 30, 30));
-
-        button_7_4.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_7_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 30, 30, 30));
-
-        button_7_3.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_7_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 60, 30, 30));
+        jLayeredPane1.add(jLabelucgen_6, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_7, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 30, 30, 150));
 
         button_7_2.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_7_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 90, 30, 30));
+        jLayeredPane1.add(button_7_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 30, 30, 30));
+
+        button_7_1.setBackground(new java.awt.Color(0, 0, 0));
+        jLayeredPane1.add(button_7_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 60, 30, 30));
+
+        button_7_0.setBackground(new java.awt.Color(0, 0, 0));
+        jLayeredPane1.add(button_7_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 90, 30, 30));
+        jLayeredPane1.add(jLabelucgen_8, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_9, new org.netbeans.lib.awtextra.AbsoluteConstraints(117, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_10, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 30, 30, 150));
+        jLayeredPane1.add(jLabelucgen_11, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 30, 30, 150));
 
         button_11_4.setBackground(new java.awt.Color(255, 255, 255));
         jLayeredPane1.add(button_11_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 30, 30, 30));
@@ -679,425 +662,82 @@ public class GUI extends javax.swing.JFrame {
 
         button_11_0.setBackground(new java.awt.Color(255, 255, 255));
         jLayeredPane1.add(button_11_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 150, 30, 30));
+        jLayeredPane1.add(jLabelucgen_12, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 322, 30, 150));
 
         button_12_0.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_12_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 440, 30, 30));
+        jLayeredPane1.add(button_12_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 442, 30, 30));
 
         button_12_1.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_12_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 410, 30, 30));
+        jLayeredPane1.add(button_12_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 412, 30, 30));
 
         button_12_2.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_12_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 379, 30, 30));
+        jLayeredPane1.add(button_12_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 382, 30, 30));
 
         button_12_3.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_12_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 350, 30, 30));
+        jLayeredPane1.add(button_12_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 352, 30, 30));
 
         button_12_4.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_12_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 320, 30, 30));
+        jLayeredPane1.add(button_12_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(34, 322, 30, 30));
+        jLayeredPane1.add(jLabelucgen_13, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_14, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_15, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_16, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 322, 30, 150));
 
         button_16_0.setBackground(new java.awt.Color(255, 255, 255));
-        jLayeredPane1.add(button_16_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 440, 30, 30));
+        button_16_0.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                button_16_0ActionPerformed(evt);
+            }
+        });
+        jLayeredPane1.add(button_16_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 442, 30, 30));
 
-        button_16_1.setBackground(new java.awt.Color(255, 255, 255));
-        jLayeredPane1.add(button_16_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 409, 30, 30));
+        button_16_1.setBackground(java.awt.Color.white);
+        jLayeredPane1.add(button_16_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 412, 30, 30));
 
         button_16_2.setBackground(new java.awt.Color(255, 255, 255));
-        jLayeredPane1.add(button_16_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 379, 30, 30));
+        jLayeredPane1.add(button_16_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 382, 30, 30));
+        jLayeredPane1.add(jLabelucgen_17, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_18, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 322, 30, 150));
 
         button_18_0.setBackground(new java.awt.Color(255, 255, 255));
-        jLayeredPane1.add(button_18_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 440, 30, 30));
+        jLayeredPane1.add(button_18_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 442, 30, 30));
 
         button_18_1.setBackground(new java.awt.Color(255, 255, 255));
-        button_18_1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_18_1ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_18_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 410, 30, 30));
+        jLayeredPane1.add(button_18_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 412, 30, 30));
 
         button_18_2.setBackground(new java.awt.Color(255, 255, 255));
-        jLayeredPane1.add(button_18_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 380, 30, 30));
+        button_18_2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                button_18_2ActionPerformed(evt);
+            }
+        });
+        jLayeredPane1.add(button_18_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 382, 30, 30));
 
         button_18_3.setBackground(new java.awt.Color(255, 255, 255));
-        jLayeredPane1.add(button_18_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 350, 30, 30));
+        jLayeredPane1.add(button_18_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 352, 30, 30));
 
         button_18_4.setBackground(new java.awt.Color(255, 255, 255));
-        jLayeredPane1.add(button_18_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 320, 30, 30));
+        jLayeredPane1.add(button_18_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 322, 30, 30));
+        jLayeredPane1.add(jLabelucgen_19, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_20, new org.netbeans.lib.awtextra.AbsoluteConstraints(423, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_21, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_22, new org.netbeans.lib.awtextra.AbsoluteConstraints(507, 322, 30, 150));
+        jLayeredPane1.add(jLabelucgen_23, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 322, 30, 150));
 
         button_23_0.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_23_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 440, 30, 30));
+        jLayeredPane1.add(button_23_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 442, 30, 30));
 
         button_23_1.setBackground(new java.awt.Color(0, 0, 0));
-        jLayeredPane1.add(button_23_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 410, 30, 30));
-
-        zarAtButton.setBackground(new java.awt.Color(255, 255, 255));
-        zarAtButton.setLabel("Zar at");
-        zarAtButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                zarAtButtonActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(zarAtButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 30, 50, 40));
-        jLayeredPane1.add(jLabelZar1, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 230, 30, 30));
-        jLayeredPane1.add(jLabelzar2, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 290, 30, 30));
-
-        button_1_4.setVisible(false);
-        jLayeredPane1.add(button_1_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 30, 30, 30));
-
-        button_1_3.setVisible(false);
-        jLayeredPane1.add(button_1_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 60, 30, 30));
-
-        button_1_2.setVisible(false);
-        jLayeredPane1.add(button_1_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 90, 30, 30));
-
-        button_1_1.setVisible(false);
-        jLayeredPane1.add(button_1_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 120, 30, 30));
-
-        button_1_0.setVisible(false);
-        jLayeredPane1.add(button_1_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 150, 30, 30));
-
-        button_0_2.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        button_0_2.setVisible(false);
-        jLayeredPane1.add(button_0_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 92, 30, 30));
-
-        button_0_1.setVisible(false);
-        jLayeredPane1.add(button_0_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 120, 30, 30));
-
-        button_0_0.setVisible(false);
-        jLayeredPane1.add(button_0_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 150, 30, 30));
-
-        button_2_4.setVisible(false);
-        jLayeredPane1.add(button_2_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 30, 30, 30));
-
-        button_2_3.setVisible(false);
-        jLayeredPane1.add(button_2_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 60, 30, 30));
-
-        button_2_2.setVisible(false);
-        jLayeredPane1.add(button_2_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 90, 30, 30));
-
-        button_2_1.setVisible(false);
-        jLayeredPane1.add(button_2_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 120, 30, 30));
-
-        button_2_0.setVisible(false);
-        jLayeredPane1.add(button_2_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 150, 30, 30));
-
-        button_3_4.setVisible(false);
-        jLayeredPane1.add(button_3_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(425, 30, 30, 30));
-
-        button_3_3.setVisible(false);
-        jLayeredPane1.add(button_3_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(425, 60, 30, 30));
-
-        button_3_2.setVisible(false);
-        jLayeredPane1.add(button_3_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(425, 90, 30, 30));
-
-        button_3_1.setVisible(false);
-        jLayeredPane1.add(button_3_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(425, 120, 30, 30));
-
-        button_3_0.setVisible(false);
-        jLayeredPane1.add(button_3_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(425, 150, 30, 30));
-
-        button_4_4.setVisible(false);
-        jLayeredPane1.add(button_4_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 30, 30, 30));
-
-        button_4_3.setVisible(false);
-        jLayeredPane1.add(button_4_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 60, 30, 30));
-
-        button_4_2.setVisible(false);
-        jLayeredPane1.add(button_4_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 90, 30, 30));
-
-        button_4_1.setVisible(false);
-        jLayeredPane1.add(button_4_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 120, 30, 30));
-
-        button_4_0.setVisible(false);
-        jLayeredPane1.add(button_4_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 150, 30, 30));
-
-        button_6_4.setVisible(false);
-        jLayeredPane1.add(button_6_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 30, 30, 30));
-
-        button_6_3.setVisible(false);
-        button_6_3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_6_3ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_6_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 60, 30, 30));
-
-        button_6_2.setVisible(false);
-        jLayeredPane1.add(button_6_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 90, 30, 30));
-
-        button_6_1.setVisible(false);
-        jLayeredPane1.add(button_6_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 120, 30, 30));
-
-        button_6_0.setVisible(false);
-        jLayeredPane1.add(button_6_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 150, 30, 30));
-
-        button_7_1.setVisible(false);
-        jLayeredPane1.add(button_7_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 120, 30, 30));
-
-        button_7_0.setVisible(false);
-        jLayeredPane1.add(button_7_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 150, 30, 30));
-
-        button_8_4.setVisible(false);
-        jLayeredPane1.add(button_8_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 30, 30, 30));
-
-        button_8_3.setVisible(false);
-        jLayeredPane1.add(button_8_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 60, 30, 30));
-
-        button_8_2.setVisible(false);
-        jLayeredPane1.add(button_8_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 90, 30, 30));
-
-        button_8_1.setVisible(false);
-        jLayeredPane1.add(button_8_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 120, 30, 30));
-
-        button_8_0.setVisible(false);
-        jLayeredPane1.add(button_8_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 150, 30, 30));
-
-        button_9_4.setVisible(false);
-        jLayeredPane1.add(button_9_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 30, 30, 30));
-
-        button_9_3.setVisible(false);
-        jLayeredPane1.add(button_9_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 60, 30, 30));
-
-        button_9_2.setVisible(false);
-        jLayeredPane1.add(button_9_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 90, 30, 30));
-
-        button_9_1.setVisible(false);
-        jLayeredPane1.add(button_9_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 120, 30, 30));
-
-        button_9_0.setVisible(false);
-        jLayeredPane1.add(button_9_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 150, 30, 30));
-
-        button_10_4.setVisible(false);
-        jLayeredPane1.add(button_10_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 30, 30, 30));
-
-        button_10_3.setVisible(false);
-        jLayeredPane1.add(button_10_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 60, 30, 30));
-
-        button_10_2.setVisible(false);
-        jLayeredPane1.add(button_10_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 90, 30, 30));
-
-        button_10_1.setVisible(false);
-        jLayeredPane1.add(button_10_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 120, 30, 30));
-
-        button_10_0.setVisible(false);
-        jLayeredPane1.add(button_10_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 150, 30, 30));
-
-        button_23_2.setVisible(false);
-        jLayeredPane1.add(button_23_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 380, 30, 30));
-
-        button_23_3.setVisible(false);
-        jLayeredPane1.add(button_23_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 350, 30, 30));
-
-        button_22_0.setVisible(false);
-        jLayeredPane1.add(button_22_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(508, 439, 30, 30));
-
-        button_22_1.setVisible(false);
-        jLayeredPane1.add(button_22_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(508, 408, 30, 30));
-
-        button_22_2.setVisible(false);
-        jLayeredPane1.add(button_22_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(508, 378, 30, 30));
-
-        button_22_3.setVisible(false);
-        jLayeredPane1.add(button_22_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(508, 348, 30, 30));
-
-        button_22_4.setVisible(false);
-        jLayeredPane1.add(button_22_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(508, 318, 30, 30));
-
-        button_21_0.setVisible(false);
-        jLayeredPane1.add(button_21_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 440, 30, 30));
-
-        button_21_1.setVisible(false);
-        jLayeredPane1.add(button_21_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 410, 30, 30));
-
-        button_21_2.setVisible(false);
-        jLayeredPane1.add(button_21_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 380, 30, 30));
-
-        button_21_3.setVisible(false);
-        jLayeredPane1.add(button_21_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 350, 30, 30));
-
-        button_21_4.setVisible(false);
-        button_21_4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_21_4ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_21_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(465, 320, 30, 30));
-
-        button_20_0.setVisible(false);
-        jLayeredPane1.add(button_20_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(423, 440, 30, 30));
-
-        button_20_1.setVisible(false);
-        button_20_1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_20_1ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_20_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(423, 410, 30, 30));
-
-        button_20_2.setVisible(false);
-        jLayeredPane1.add(button_20_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(422, 380, 30, 30));
-
-        button_20_3.setVisible(false);
-        button_20_3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_20_3ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_20_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(422, 350, 30, 30));
-
-        button_20_4.setVisible(false);
-        jLayeredPane1.add(button_20_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(422, 320, 30, 30));
-
-        button_19_0.setVisible(false);
-        jLayeredPane1.add(button_19_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 440, 30, 30));
-
-        button_19_1.setVisible(false);
-        jLayeredPane1.add(button_19_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 410, 30, 30));
-
-        button_19_2.setVisible(false);
-        jLayeredPane1.add(button_19_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 380, 30, 30));
-
-        button_19_3.setVisible(false);
-        jLayeredPane1.add(button_19_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 350, 30, 30));
-
-        button_19_4.setVisible(false);
-        jLayeredPane1.add(button_19_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(382, 320, 30, 30));
-
-        button_17_0.setVisible(false);
-        button_17_0.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_17_0ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_17_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 440, 30, 30));
-
-        button_17_1.setVisible(false);
-        button_17_1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_17_1ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_17_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 410, 30, 30));
-
-        button_17_2.setVisible(false);
-        jLayeredPane1.add(button_17_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 380, 30, 30));
-
-        button_17_3.setVisible(false);
-        jLayeredPane1.add(button_17_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 350, 30, 30));
-
-        button_17_4.setVisible(false);
-        jLayeredPane1.add(button_17_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(245, 320, 30, 30));
-
-        button_16_3.setVisible(false);
-        jLayeredPane1.add(button_16_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 348, 30, 30));
-
-        button_16_4.setVisible(false);
-        jLayeredPane1.add(button_16_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(202, 318, 30, 30));
-
-        button_15_0.setVisible(false);
-        jLayeredPane1.add(button_15_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 440, 30, 30));
-
-        button_15_1.setVisible(false);
-        jLayeredPane1.add(button_15_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 410, 30, 30));
-
-        button_15_2.setVisible(false);
-        jLayeredPane1.add(button_15_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 380, 30, 30));
-
-        button_15_3.setVisible(false);
-        jLayeredPane1.add(button_15_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 350, 30, 30));
-
-        button_15_4.setVisible(false);
-        jLayeredPane1.add(button_15_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 320, 30, 30));
-
-        button_14_0.setVisible(false);
-        jLayeredPane1.add(button_14_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 440, 30, 30));
-
-        button_14_1.setVisible(false);
-        jLayeredPane1.add(button_14_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 410, 30, 30));
-
-        button_14_2.setVisible(false);
-        button_14_2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_14_2ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_14_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 380, 30, 30));
-
-        button_14_3.setVisible(false);
-        jLayeredPane1.add(button_14_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 350, 30, 30));
-
-        button_14_4.setVisible(false);
-        jLayeredPane1.add(button_14_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(118, 320, 30, 30));
-
-        button_13_0.setVisible(false);
-        jLayeredPane1.add(button_13_0, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 440, 30, 30));
-
-        button_13_1.setVisible(false);
-        jLayeredPane1.add(button_13_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 410, 30, 30));
-
-        button_13_2.setVisible(false);
-        jLayeredPane1.add(button_13_2, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 380, 30, 30));
-
-        button_13_3.setVisible(false);
-        jLayeredPane1.add(button_13_3, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 350, 30, 30));
-
-        button_13_4.setVisible(false);
-        jLayeredPane1.add(button_13_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(75, 320, 30, 30));
-
-        button_23_4.setVisible(false);
-        button_23_4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                button_23_4ActionPerformed(evt);
-            }
-        });
-        jLayeredPane1.add(button_23_4, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 320, 30, 30));
+        jLayeredPane1.add(button_23_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 412, 30, 30));
 
         getContentPane().add(jLayeredPane1);
-        jLayeredPane1.setBounds(0, 0, 640, 540);
+        jLayeredPane1.setBounds(0, 0, 610, 540);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void button_0_4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_0_4ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_0_4ActionPerformed
-
-    private void button_0_3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_0_3ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_0_3ActionPerformed
-
     private void zarAtButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_zarAtButtonActionPerformed
         // TODO add your handling code here:
-//        
-//        zarAtButton.addActionListener(new ActionListener() {
-//    public void actionPerformed(ActionEvent evt) {
-//        int zar = random.nextInt(6) + 1;
-//String yol = "com/mycompany/networkproject/images/" + zar + ".png";
-//
-//URL imageUrl = getClass().getClassLoader().getResource(yol);
-//if (imageUrl != null) {
-//    jLabelZar1.setIcon(new ImageIcon(imageUrl));
-//} else {
-//    System.out.println("GÖRSEL BULUNAMADI: " + yol);
-//}
-//
-//    }
-//});
-//      if (zarAtButton.isEnabled()) {
-//        int zar = random.nextInt(6) + 1;
-//
-//        String yol = "com/mycompany/networkproject/images/" + zar + ".png";
-//        URL imageUrl = getClass().getClassLoader().getResource(yol);
-//
-//        if (imageUrl != null) {
-//            jLabelZar1.setIcon(new ImageIcon(imageUrl));
-//        } else {
-//            System.out.println("GÖRSEL BULUNAMADI: " + yol);
-//        }
-//
-//        client.mesajGonder("ZAR:" + zar);
-//        zarAtButton.setEnabled(false);
-//    }
 
         if (!zarAtButton.isEnabled()) {
             return;
@@ -1144,42 +784,13 @@ public class GUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_zarAtButtonActionPerformed
 
-    private void button_6_3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_6_3ActionPerformed
+    private void button_16_0ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_16_0ActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_button_6_3ActionPerformed
+    }//GEN-LAST:event_button_16_0ActionPerformed
 
-    private void button_14_2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_14_2ActionPerformed
+    private void button_18_2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_18_2ActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_button_14_2ActionPerformed
-
-    private void button_23_4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_23_4ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_23_4ActionPerformed
-
-    private void button_20_3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_20_3ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_20_3ActionPerformed
-
-    private void button_17_0ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_17_0ActionPerformed
-        // TODO add your handling code here:
-
-    }//GEN-LAST:event_button_17_0ActionPerformed
-
-    private void button_18_1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_18_1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_18_1ActionPerformed
-
-    private void button_17_1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_17_1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_17_1ActionPerformed
-
-    private void button_20_1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_20_1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_20_1ActionPerformed
-
-    private void button_21_4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_21_4ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_button_21_4ActionPerformed
+    }//GEN-LAST:event_button_18_2ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -1219,14 +830,6 @@ public class GUI extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private java.awt.Button button_0_0;
     private java.awt.Button button_0_1;
-    private java.awt.Button button_0_2;
-    private java.awt.Button button_0_3;
-    private java.awt.Button button_0_4;
-    private java.awt.Button button_10_0;
-    private java.awt.Button button_10_1;
-    private java.awt.Button button_10_2;
-    private java.awt.Button button_10_3;
-    private java.awt.Button button_10_4;
     private java.awt.Button button_11_0;
     private java.awt.Button button_11_1;
     private java.awt.Button button_11_2;
@@ -1237,108 +840,50 @@ public class GUI extends javax.swing.JFrame {
     private java.awt.Button button_12_2;
     private java.awt.Button button_12_3;
     private java.awt.Button button_12_4;
-    private java.awt.Button button_13_0;
-    private java.awt.Button button_13_1;
-    private java.awt.Button button_13_2;
-    private java.awt.Button button_13_3;
-    private java.awt.Button button_13_4;
-    private java.awt.Button button_14_0;
-    private java.awt.Button button_14_1;
-    private java.awt.Button button_14_2;
-    private java.awt.Button button_14_3;
-    private java.awt.Button button_14_4;
-    private java.awt.Button button_15_0;
-    private java.awt.Button button_15_1;
-    private java.awt.Button button_15_2;
-    private java.awt.Button button_15_3;
-    private java.awt.Button button_15_4;
     private java.awt.Button button_16_0;
     private java.awt.Button button_16_1;
     private java.awt.Button button_16_2;
-    private java.awt.Button button_16_3;
-    private java.awt.Button button_16_4;
-    private java.awt.Button button_17_0;
-    private java.awt.Button button_17_1;
-    private java.awt.Button button_17_2;
-    private java.awt.Button button_17_3;
-    private java.awt.Button button_17_4;
     private java.awt.Button button_18_0;
     private java.awt.Button button_18_1;
     private java.awt.Button button_18_2;
     private java.awt.Button button_18_3;
     private java.awt.Button button_18_4;
-    private java.awt.Button button_19_0;
-    private java.awt.Button button_19_1;
-    private java.awt.Button button_19_2;
-    private java.awt.Button button_19_3;
-    private java.awt.Button button_19_4;
-    private java.awt.Button button_1_0;
-    private java.awt.Button button_1_1;
-    private java.awt.Button button_1_2;
-    private java.awt.Button button_1_3;
-    private java.awt.Button button_1_4;
-    private java.awt.Button button_20_0;
-    private java.awt.Button button_20_1;
-    private java.awt.Button button_20_2;
-    private java.awt.Button button_20_3;
-    private java.awt.Button button_20_4;
-    private java.awt.Button button_21_0;
-    private java.awt.Button button_21_1;
-    private java.awt.Button button_21_2;
-    private java.awt.Button button_21_3;
-    private java.awt.Button button_21_4;
-    private java.awt.Button button_22_0;
-    private java.awt.Button button_22_1;
-    private java.awt.Button button_22_2;
-    private java.awt.Button button_22_3;
-    private java.awt.Button button_22_4;
     private java.awt.Button button_23_0;
     private java.awt.Button button_23_1;
-    private java.awt.Button button_23_2;
-    private java.awt.Button button_23_3;
-    private java.awt.Button button_23_4;
-    private java.awt.Button button_2_0;
-    private java.awt.Button button_2_1;
-    private java.awt.Button button_2_2;
-    private java.awt.Button button_2_3;
-    private java.awt.Button button_2_4;
-    private java.awt.Button button_3_0;
-    private java.awt.Button button_3_1;
-    private java.awt.Button button_3_2;
-    private java.awt.Button button_3_3;
-    private java.awt.Button button_3_4;
-    private java.awt.Button button_4_0;
-    private java.awt.Button button_4_1;
-    private java.awt.Button button_4_2;
-    private java.awt.Button button_4_3;
-    private java.awt.Button button_4_4;
     private java.awt.Button button_5_0;
     private java.awt.Button button_5_1;
     private java.awt.Button button_5_2;
     private java.awt.Button button_5_3;
     private java.awt.Button button_5_4;
-    private java.awt.Button button_6_0;
-    private java.awt.Button button_6_1;
-    private java.awt.Button button_6_2;
-    private java.awt.Button button_6_3;
-    private java.awt.Button button_6_4;
     private java.awt.Button button_7_0;
     private java.awt.Button button_7_1;
     private java.awt.Button button_7_2;
-    private java.awt.Button button_7_3;
-    private java.awt.Button button_7_4;
-    private java.awt.Button button_8_0;
-    private java.awt.Button button_8_1;
-    private java.awt.Button button_8_2;
-    private java.awt.Button button_8_3;
-    private java.awt.Button button_8_4;
-    private java.awt.Button button_9_0;
-    private java.awt.Button button_9_1;
-    private java.awt.Button button_9_2;
-    private java.awt.Button button_9_3;
-    private java.awt.Button button_9_4;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabelZar1;
+    private javax.swing.JLabel jLabelucgen_0;
+    private javax.swing.JLabel jLabelucgen_1;
+    private javax.swing.JLabel jLabelucgen_10;
+    private javax.swing.JLabel jLabelucgen_11;
+    private javax.swing.JLabel jLabelucgen_12;
+    private javax.swing.JLabel jLabelucgen_13;
+    private javax.swing.JLabel jLabelucgen_14;
+    private javax.swing.JLabel jLabelucgen_15;
+    private javax.swing.JLabel jLabelucgen_16;
+    private javax.swing.JLabel jLabelucgen_17;
+    private javax.swing.JLabel jLabelucgen_18;
+    private javax.swing.JLabel jLabelucgen_19;
+    private javax.swing.JLabel jLabelucgen_2;
+    private javax.swing.JLabel jLabelucgen_20;
+    private javax.swing.JLabel jLabelucgen_21;
+    private javax.swing.JLabel jLabelucgen_22;
+    private javax.swing.JLabel jLabelucgen_23;
+    private javax.swing.JLabel jLabelucgen_3;
+    private javax.swing.JLabel jLabelucgen_4;
+    private javax.swing.JLabel jLabelucgen_5;
+    private javax.swing.JLabel jLabelucgen_6;
+    private javax.swing.JLabel jLabelucgen_7;
+    private javax.swing.JLabel jLabelucgen_8;
+    private javax.swing.JLabel jLabelucgen_9;
     private javax.swing.JLabel jLabelzar2;
     private javax.swing.JLayeredPane jLayeredPane1;
     private java.awt.Button zarAtButton;

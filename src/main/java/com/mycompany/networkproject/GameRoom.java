@@ -213,35 +213,75 @@ public class GameRoom implements Runnable {
             String msg = in.readLine();
             System.out.println("[Oyuncu" + oyuncuNo + "] " + msg);
 
-//            if (msg.startsWith("ILKZAR:")) {
-//                int zar = Integer.parseInt(msg.substring(7).trim());
-//                if (oyuncuNo == 1) {
-//                    ilkZar1 = zar;
-//                } else {
-//                    ilkZar2 = zar;
-//                }
-//                receiver.println("ILKZAR:" + zar);
-//
-//            }
             if (msg.startsWith("ILKZAR:")) {
                 int zar = Integer.parseInt(msg.substring(7).trim());
                 if (oyuncuNo == 1) {
                     ilkZar1 = zar;
                     receiver.println("ILKZAR:" + zar);
-                    // Oyuncu 2'ye sıra ver
                     out2.println("SIRA:2");
                 } else {
                     ilkZar2 = zar;
                     receiver.println("ILKZAR:" + zar);
                 }
-            } else {
-                receiver.println(msg);
 
-                if (msg.startsWith("ZAR:")) {
-                    sender.println("SIRA:0");
-                    receiver.println("SIRA:" + oyuncuNo);
-                }
+            } else if (msg.equals("HAMLE_BITTI")) {
+                // 🟢 Oyuncu hamlesini bitirdi → sırayı rakibe geçir
+                //sender.println("SIRA:0");               // kendi pasif
+                int rakip = (oyuncuNo == 1) ? 2 : 1;
+                sender.println("SIRA:0");
+                receiver.println("SIRA:" + rakip);
+
+            } else if (msg.startsWith("SIRA:")) {
+                receiver.println(msg); // yine de destekle (manuel sıraya geçiş için)
+
+            } else if (msg.startsWith("HAMLE:")) {
+                System.out.println("➡ HAMLE mesajı iletildi: " + msg);
+                receiver.println(msg); // karşı oyuncuya ilet
+            } else {
+                System.out.println("➡ Genel mesaj iletildi: " + msg);
+                receiver.println(msg); // diğer tüm mesajları aynen aktar
             }
         }
     }
 }
+//    private void kontrolEt(BufferedReader in, PrintWriter sender, PrintWriter receiver, int oyuncuNo) throws IOException {
+//        if (!oyuncularHazir) {
+//            return;
+//        }
+//
+//        if (in.ready()) {
+//            String msg = in.readLine();
+//            System.out.println("[Oyuncu" + oyuncuNo + "] " + msg);
+//
+////            if (msg.startsWith("ILKZAR:")) {
+////                int zar = Integer.parseInt(msg.substring(7).trim());
+////                if (oyuncuNo == 1) {
+////                    ilkZar1 = zar;
+////                } else {
+////                    ilkZar2 = zar;
+////                }
+////                receiver.println("ILKZAR:" + zar);
+////
+////            }
+//            if (msg.startsWith("ILKZAR:")) {
+//                int zar = Integer.parseInt(msg.substring(7).trim());
+//                if (oyuncuNo == 1) {
+//                    ilkZar1 = zar;
+//                    receiver.println("ILKZAR:" + zar);
+//                    // Oyuncu 2'ye sıra ver
+//                    out2.println("SIRA:2");
+//                } else {
+//                    ilkZar2 = zar;
+//                    receiver.println("ILKZAR:" + zar);
+//                }
+//            } else {
+//                receiver.println(msg);
+//
+//                if (msg.startsWith("ZAR:")) {
+//                    sender.println("SIRA:0");
+//                    receiver.println("SIRA:" + oyuncuNo);
+//                }
+//            }
+//        }
+//    }
+//}
