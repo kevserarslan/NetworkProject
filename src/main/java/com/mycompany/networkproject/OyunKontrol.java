@@ -1,51 +1,50 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.networkproject;
 
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.util.ArrayList;
+import javax.swing.JLabel;
 
-/**
- *
- * @author Kevser
- */
 public class OyunKontrol {
 
-    private ArrayList<Tas> siyahTaslar;
-    private ArrayList<Tas> beyazTaslar;
+   public static void tasiBaraGonder(Tas kirilanTas, JLabel barLabel, int oyuncuNo, ArrayList<Tas> tasListesi) {
+    Button buton = kirilanTas.getButon();
 
-    public OyunKontrol(ArrayList<Tas> siyah, ArrayList<Tas> beyaz) {
-        this.siyahTaslar = siyah;
-        this.beyazTaslar = beyaz;
-    }
+    // Eski parent'tan çıkar
+    Container parent = buton.getParent();
+    if (parent != null) parent.remove(buton);
 
-    public boolean hamleGecerliMi(Tas secilenTas, int hedefUcgen, int[] zarlar, int oyuncuNo) {
-        int mevcutUcgen = secilenTas.getUcgenNo();
-        int mesafe = Math.abs(hedefUcgen - mevcutUcgen);
+    barLabel.setLayout(null);
 
-        if (oyuncuNo == 1 && hedefUcgen >= mevcutUcgen) return false;
-        if (oyuncuNo == 2 && hedefUcgen <= mevcutUcgen) return false;
-
-        return mesafe == zarlar[0] || mesafe == zarlar[1];
-    }
-
-    public void tasiTasi(Tas tas, Button hedefButon, int hedefUcgen, int hedefPozisyon) {
-        tas.getButon().setVisible(false);
-        hedefButon.setVisible(true);
-        hedefButon.setBackground(tas.getOyuncuNo() == 1 ? Color.BLACK : Color.WHITE);
-        tas.setButon(hedefButon);
-        tas.setUcgenNo(hedefUcgen);
-        tas.setPozisyonNo(hedefPozisyon);
-    }
-
-    public Tas tasBul(Button buton, int oyuncuNo) {
-        ArrayList<Tas> liste = (oyuncuNo == 1) ? siyahTaslar : beyazTaslar;
-        for (Tas t : liste) {
-            if (t.getButon() == buton) return t;
+    // Bar'daki mevcut buton sayısını bul
+    int mevcut = 0;
+    for (Component c : barLabel.getComponents()) {
+        if (c instanceof Button && c.isVisible()) {
+            mevcut++;
         }
-        return null;
     }
+
+    // Alt alta yığılsın
+    int y = barLabel.getHeight() - 30 - (mevcut * 30);
+
+    // Özellikler
+    buton.setSize(30, 30);
+    buton.setLocation(0, y);
+    buton.setBackground(oyuncuNo == 1 ? Color.BLACK : Color.WHITE);
+    buton.setVisible(true);
+
+    barLabel.add(buton);
+    barLabel.setComponentZOrder(buton, 0);
+    barLabel.revalidate();
+    barLabel.repaint();
+
+    // UçgenNo -1 yapılır
+    kirilanTas.setUcgenNo(-1);
+    kirilanTas.setPozisyonNo(-1);
+
+    System.out.println("🚫 Rakip taş bara eklendi. Mevcut: " + mevcut + ", y: " + y);
+}
+
 }

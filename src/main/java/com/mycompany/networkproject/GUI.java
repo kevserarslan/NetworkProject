@@ -289,55 +289,54 @@ public class GUI extends javax.swing.JFrame {
     }
 
     private void ortakButonTiklama(ActionEvent evt) {
-    Button tiklanan = (Button) evt.getSource();
+        Button tiklanan = (Button) evt.getSource();
 
-    for (Tas tas : (oyuncuNumarasi == 1 ? siyahTaslar : beyazTaslar)) {
-        if (tas.getButon() == tiklanan) {
-            int ucgenNo = tas.getUcgenNo();
-            JLabel ucgen = ucgenler[ucgenNo];
+        for (Tas tas : (oyuncuNumarasi == 1 ? siyahTaslar : beyazTaslar)) {
+            if (tas.getButon() == tiklanan) {
+                int ucgenNo = tas.getUcgenNo();
+                JLabel ucgen = ucgenler[ucgenNo];
 
-            // 🔍 GUI'deki en üstteki butonu Y koordinatına göre bul
-            Component[] comps = ucgen.getComponents();
-            Button enUstButon = null;
-            int enUstY = (ucgenNo <= 11) ? -1 : Integer.MAX_VALUE;
+                // 🔍 GUI'deki en üstteki butonu Y koordinatına göre bul
+                Component[] comps = ucgen.getComponents();
+                Button enUstButon = null;
+                int enUstY = (ucgenNo <= 11) ? -1 : Integer.MAX_VALUE;
 
-            for (Component comp : comps) {
-                if (comp instanceof Button && comp.isVisible()) {
-                    int y = comp.getY();
-                    if (ucgenNo <= 11) {
-                        if (y > enUstY) {
-                            enUstY = y;
-                            enUstButon = (Button) comp;
-                        }
-                    } else {
-                        if (y < enUstY) {
-                            enUstY = y;
-                            enUstButon = (Button) comp;
+                for (Component comp : comps) {
+                    if (comp instanceof Button && comp.isVisible()) {
+                        int y = comp.getY();
+                        if (ucgenNo <= 11) {
+                            if (y > enUstY) {
+                                enUstY = y;
+                                enUstButon = (Button) comp;
+                            }
+                        } else {
+                            if (y < enUstY) {
+                                enUstY = y;
+                                enUstButon = (Button) comp;
+                            }
                         }
                     }
                 }
-            }
 
-            // ❌ En üstteki taş değilse reddet
-            if (enUstButon != tiklanan) {
-                JOptionPane.showMessageDialog(null, "Sadece en üstteki taşı oynayabilirsin!");
-                return;
-            }
+                // ❌ En üstteki taş değilse reddet
+                if (enUstButon != tiklanan) {
+                    JOptionPane.showMessageDialog(null, "Sadece en üstteki taşı oynayabilirsin!");
+                    return;
+                }
 
-            // 🔁 Öncekini sıfırla
-            if (secilenTas != null && secilenTas.getButon() != null) {
-                secilenTas.getButon().setBackground(oyuncuNumarasi == 1 ? Color.BLACK : Color.WHITE);
-            }
+                // 🔁 Öncekini sıfırla
+                if (secilenTas != null && secilenTas.getButon() != null) {
+                    secilenTas.getButon().setBackground(oyuncuNumarasi == 1 ? Color.BLACK : Color.WHITE);
+                }
 
-            secilenTas = tas;
-            secilenButonMouse = tiklanan;
-            tiklanan.setBackground(Color.RED);
-            System.out.println("✅ Oyuncu " + oyuncuNumarasi + " taş seçti: " + tiklanan.getName());
-            break;
+                secilenTas = tas;
+                secilenButonMouse = tiklanan;
+                tiklanan.setBackground(Color.RED);
+                System.out.println("✅ Oyuncu " + oyuncuNumarasi + " taş seçti: " + tiklanan.getName());
+                break;
+            }
         }
     }
-}
-
 
     private int pozisyonNumarasiniBul(Button buton) {
         String name = buton.getName();  // örnek: button_5_3
@@ -544,7 +543,39 @@ public class GUI extends javax.swing.JFrame {
                     e.printStackTrace();
                 }
             }
-            
+
+        } else if (mesaj.startsWith("CIKAR:")) {
+            String[] parts = mesaj.substring(6).split(",");
+            if (parts.length == 2) {
+                try {
+                    int ucgen = Integer.parseInt(parts[0].trim());
+                    int poz = Integer.parseInt(parts[1].trim());
+                    Button buton = butonlar[ucgen][poz];
+                    if (buton != null) {
+                        Container parent = buton.getParent();
+                        if (parent != null) {
+                            parent.remove(buton);
+                        }
+                        buton.setVisible(false);
+                        butonlar[ucgen][poz] = null;
+                        parent.revalidate();
+                        parent.repaint();
+                        System.out.println("📤 Rakip taş çıkarıldı (senkronize): " + ucgen + "," + poz);
+                    }
+                } catch (Exception e) {
+                    System.err.println("CIKAR mesajı hatalı: " + mesaj);
+                    e.printStackTrace();
+                }
+            }
+
+        } else if (mesaj.startsWith("BITIS:")) {
+            int kazanan = Integer.parseInt(mesaj.substring(6));
+            String msg = (kazanan == oyuncuNumarasi) ? "🎉 Oyunu kazandınız!" : "😞 Oyunu kaybettiniz.";
+
+            JOptionPane.showMessageDialog(null, msg, "Oyun Bitti", JOptionPane.INFORMATION_MESSAGE);
+
+            zarAtButton.setEnabled(false);
+            // taş tıklama engeli vs de yapılabilir
         }
 
     }
@@ -552,6 +583,121 @@ public class GUI extends javax.swing.JFrame {
     public void hataGoster(String mesaj) {
         JOptionPane.showMessageDialog(this, mesaj, "Bağlantı Hatası", JOptionPane.ERROR_MESSAGE);
     }
+    // Şu anki oyuncunun taş listesi
+
+    private ArrayList<Tas> aktifTaslar() {
+        return (oyuncuNumarasi == 1) ? siyahTaslar : beyazTaslar;
+    }
+
+    private boolean tumTaslarEvdeMi(ArrayList<Tas> taslar, int oyuncuNo) {
+        System.out.println("🔍 Evde mi kontrolü başlatıldı. Oyuncu: " + oyuncuNo);
+
+        for (Tas tas : taslar) {
+            int ucgenNo = tas.getUcgenNo();
+            System.out.println("📍 Taş bulundu: üçgen " + ucgenNo);
+
+            if (oyuncuNo == 1) {
+                if (ucgenNo < 0 || ucgenNo > 5) {
+                    System.out.println("❌ Siyah taş evde değil: " + ucgenNo);
+                    return false;
+                }
+            }
+
+            if (oyuncuNo == 2) {
+                if (ucgenNo < 18 || ucgenNo > 23) {
+                    System.out.println("❌ Beyaz taş evde değil: " + ucgenNo);
+                    return false;
+                }
+            }
+        }
+
+        System.out.println("✅ Tüm taşlar evde!");
+        return true;
+    }
+
+    private boolean tasCikarabilirMi(Tas tas, int zar, int oyuncuNo, ArrayList<Tas> taslar) {
+        int ucgenNo = tas.getUcgenNo();
+        System.out.println("🧮 taşCikarabilirMi: ucgen=" + ucgenNo + ", zar=" + zar + ", oyuncu=" + oyuncuNo);
+
+        if (oyuncuNo == 1) {
+            int hedef = zar - 1;
+            System.out.println("🎯 Hedef (siyah): " + hedef);
+            if (ucgenNo == hedef) {
+                System.out.println("✅ Doğrudan çıkarılabilir");
+                return true;
+            }
+            if (ucgenNo < hedef) {
+                for (Tas t : taslar) {
+                    if (t.getUcgenNo() > ucgenNo) {
+                        System.out.println("❌ Üstte taş var → çıkarılamaz");
+                        return false;
+                    }
+                }
+                System.out.println("✅ İzin verildi (siyah iç taş)");
+                return true;
+            }
+
+        } else if (oyuncuNo == 2) {
+            int hedef = 24 - zar;
+            System.out.println("🎯 Hedef (beyaz): " + hedef);
+            if (ucgenNo == hedef) {
+                System.out.println("✅ Doğrudan çıkarılabilir");
+                return true;
+            }
+            if (ucgenNo > hedef) {
+                for (Tas t : taslar) {
+                    if (t.getUcgenNo() < ucgenNo) {
+                        System.out.println("❌ Üstte taş var → çıkarılamaz");
+                        return false;
+                    }
+                }
+                System.out.println("✅ İzin verildi (beyaz iç taş)");
+                return true;
+            }
+        }
+
+        System.out.println("❌ Hiçbir koşul sağlanamadı → çıkarılamaz");
+        return false;
+    }
+
+    private void tasCikar(int ucgenNo, Button[][] butonlar, ArrayList<Tas> tasListesi) {
+    for (int i = 4; i >= 0; i--) {
+        Button btn = butonlar[ucgenNo][i];
+        if (btn != null && btn.isVisible()) {
+            Container parent = btn.getParent();
+            System.out.println("🚪 Taş çıkarılıyor: " + btn.getName());
+
+            if (parent != null) {
+                parent.remove(btn);
+                parent.revalidate();
+                parent.repaint();
+                System.out.println("✅ GUI'den çıkarıldı.");
+            } else {
+                System.out.println("⚠️ Uyarı: Parent null, GUI'den çıkarılamadı.");
+            }
+
+            client.mesajGonder("CIKAR:" + ucgenNo + "," + i);
+            tasListesi.removeIf(t -> t.getButon() == btn);
+            butonlar[ucgenNo][i] = null;
+            System.out.println("📤 Taş listeden çıkarıldı.");
+
+            // 🏁 Oyun bitti mi kontrolü
+            if (tasListesi.isEmpty()) {
+                System.out.println("🎉 Tüm taşlar çıkarıldı! Oyuncu " + oyuncuNumarasi + " kazandı!");
+
+                String kazananRenk = (oyuncuNumarasi == 1) ? "Siyah" : "Beyaz";
+                JOptionPane.showMessageDialog(null,
+                    "🏆 " + kazananRenk + " oyuncu oyunu kazandı!",
+                    "Tebrikler", JOptionPane.INFORMATION_MESSAGE);
+
+                client.mesajGonder("BITIS:" + oyuncuNumarasi);
+                zarAtButton.setEnabled(false);
+            }
+
+            break;
+        }
+    }
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -621,7 +767,8 @@ public class GUI extends javax.swing.JFrame {
         jLabelucgen_23 = new javax.swing.JLabel();
         button_23_0 = new java.awt.Button();
         button_23_1 = new java.awt.Button();
-        jLabel2 = new javax.swing.JLabel();
+        jLabelbar2 = new javax.swing.JLabel();
+        jLabelbar1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMaximumSize(new java.awt.Dimension(600, 500));
@@ -772,8 +919,9 @@ public class GUI extends javax.swing.JFrame {
         button_23_1.setBackground(new java.awt.Color(0, 0, 0));
         jLayeredPane1.add(button_23_1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 412, 30, 30));
 
-        jLabel2.setText("jLabel2");
-        jLayeredPane1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 340, -1, 130));
+        jLabelbar2.setText("jLabel2");
+        jLayeredPane1.add(jLabelbar2, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 340, 30, 150));
+        jLayeredPane1.add(jLabelbar1, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 80, 30, 150));
 
         getContentPane().add(jLayeredPane1);
         jLayeredPane1.setBounds(0, 0, 610, 540);
@@ -792,7 +940,6 @@ public class GUI extends javax.swing.JFrame {
             // İlk turda sadece 1 zar atılır
             int zar = random.nextInt(6) + 1;
 
-            // 🎯 Zarları diziye ata (BUNU EKLE)
             String yol = "com/mycompany/networkproject/images/" + zar + ".png";
             URL imageUrl = getClass().getClassLoader().getResource(yol);
             if (imageUrl != null) {
@@ -826,6 +973,42 @@ public class GUI extends javax.swing.JFrame {
 
             client.mesajGonder("ZAR:" + zar1 + "," + zar2);
             zarAtButton.setEnabled(false);
+
+            // 🎯 EKLENEN KISIM: Taş çıkarma kontrolü
+            if (tumTaslarEvdeMi(aktifTaslar(), oyuncuNumarasi)) {
+                boolean tasCikardiMi = false;
+
+                ArrayList<Tas> siraliTaslar = new ArrayList<>(aktifTaslar());
+                siraliTaslar.sort((t1, t2) -> {
+                    return (oyuncuNumarasi == 1)
+                            ? Integer.compare(t1.getUcgenNo(), t2.getUcgenNo()) // siyah: 0 → 5
+                            : Integer.compare(t2.getUcgenNo(), t1.getUcgenNo());  // beyaz: 23 → 18
+                });
+
+                for (int i = 0; i < zarlar.length; i++) {
+                    int zar = zarlar[i];
+                    for (Tas tas : siraliTaslar) {
+                        if (tasCikarabilirMi(tas, zar, oyuncuNumarasi, aktifTaslar())) {
+                            tasCikar(tas.getUcgenNo(), butonlar, aktifTaslar());
+
+                            zarlar[i] = -1;
+                            tasCikardiMi = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!tasCikardiMi) {
+                    JOptionPane.showMessageDialog(this, "Zarlar taş çıkarmaya uygun değil. Sıra rakibe geçti.");
+                    int rakip = (oyuncuNumarasi == 1) ? 2 : 1;
+                    client.mesajGonder("SIRA:" + rakip);
+                } else {
+                    System.out.println("✅ En az 1 taş çıkarıldı.");
+                    if (zarlar[0] == -1 || zarlar[1] == -1) {
+                        client.mesajGonder("HAMLE_BITTI");
+                    }
+                }
+            }
         }
     }//GEN-LAST:event_zarAtButtonActionPerformed
 
@@ -904,8 +1087,9 @@ public class GUI extends javax.swing.JFrame {
     private java.awt.Button button_7_1;
     private java.awt.Button button_7_2;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabelZar1;
+    private javax.swing.JLabel jLabelbar1;
+    private javax.swing.JLabel jLabelbar2;
     private javax.swing.JLabel jLabelucgen_0;
     private javax.swing.JLabel jLabelucgen_1;
     private javax.swing.JLabel jLabelucgen_10;
