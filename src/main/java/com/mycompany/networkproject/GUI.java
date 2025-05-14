@@ -246,11 +246,7 @@ public class GUI extends javax.swing.JFrame {
                                 break;
                             }
                         }
-//                        //  HAMLE mesajı gönder (tüm client'lara yansıtmak için)
-//                        String butonName = secilenButonMouse.getName();
-//                        client.mesajGonder("HAMLE:" + eskiUcgen + "," + finalHedefUcgen + "," + butonName);
-//                        System.out.println("📤 Gönderilen mesaj: HAMLE:" + eskiUcgen + "," + finalHedefUcgen + "," + butonName);
-                        // 🔍 buton pozisyonunu bul (0-4)
+
                         int pozisyon = -1;
                         for (int i = 0; i < 5; i++) {
                             if (butonlar[eskiUcgen][i] == secilenButonMouse) {
