@@ -569,13 +569,29 @@ public class GUI extends javax.swing.JFrame {
             }
 
         } else if (mesaj.startsWith("BITIS:")) {
-            int kazanan = Integer.parseInt(mesaj.substring(6));
-            String msg = (kazanan == oyuncuNumarasi) ? "🎉 Oyunu kazandınız!" : "😞 Oyunu kaybettiniz.";
+            int kazanan = Integer.parseInt(mesaj.substring(6).trim());
 
-            JOptionPane.showMessageDialog(null, msg, "Oyun Bitti", JOptionPane.INFORMATION_MESSAGE);
+            String mesajMetni;
+            int mesajTipi;
 
-            zarAtButton.setEnabled(false);
-            // taş tıklama engeli vs de yapılabilir
+            if (kazanan == oyuncuNumarasi) {
+                mesajMetni = "🎉 Oyunu kazandınız!\nYeni bir oyun başlatmak ister misiniz?";
+                mesajTipi = JOptionPane.INFORMATION_MESSAGE;
+            } else {
+                mesajMetni = "😞 Oyunu kaybettiniz.\nYeni bir oyun başlatmak ister misiniz?";
+                mesajTipi = JOptionPane.WARNING_MESSAGE;
+            }
+
+            int secim = JOptionPane.showConfirmDialog(this,
+                    mesajMetni,
+                    "Oyun Bitti", JOptionPane.YES_NO_OPTION, mesajTipi);
+
+            if (secim == JOptionPane.YES_OPTION) {
+                this.dispose();
+                new GUI().setVisible(true);
+            } else {
+                System.exit(0);
+            }
         }
 
     }
@@ -661,43 +677,43 @@ public class GUI extends javax.swing.JFrame {
     }
 
     private void tasCikar(int ucgenNo, Button[][] butonlar, ArrayList<Tas> tasListesi) {
-    for (int i = 4; i >= 0; i--) {
-        Button btn = butonlar[ucgenNo][i];
-        if (btn != null && btn.isVisible()) {
-            Container parent = btn.getParent();
-            System.out.println("🚪 Taş çıkarılıyor: " + btn.getName());
+        for (int i = 4; i >= 0; i--) {
+            Button btn = butonlar[ucgenNo][i];
+            if (btn != null && btn.isVisible()) {
+                Container parent = btn.getParent();
+                System.out.println("🚪 Taş çıkarılıyor: " + btn.getName());
 
-            if (parent != null) {
-                parent.remove(btn);
-                parent.revalidate();
-                parent.repaint();
-                System.out.println("✅ GUI'den çıkarıldı.");
-            } else {
-                System.out.println("⚠️ Uyarı: Parent null, GUI'den çıkarılamadı.");
+                if (parent != null) {
+                    parent.remove(btn);
+                    parent.revalidate();
+                    parent.repaint();
+                    System.out.println("✅ GUI'den çıkarıldı.");
+                } else {
+                    System.out.println("⚠️ Uyarı: Parent null, GUI'den çıkarılamadı.");
+                }
+
+                client.mesajGonder("CIKAR:" + ucgenNo + "," + i);
+                tasListesi.removeIf(t -> t.getButon() == btn);
+                butonlar[ucgenNo][i] = null;
+                System.out.println("📤 Taş listeden çıkarıldı.");
+
+                // 🏁 Oyun bitti mi kontrolü
+                if (tasListesi.isEmpty()) {
+                    System.out.println("🎉 Tüm taşlar çıkarıldı! Oyuncu " + oyuncuNumarasi + " kazandı!");
+
+                    String kazananRenk = (oyuncuNumarasi == 1) ? "Siyah" : "Beyaz";
+                    JOptionPane.showMessageDialog(null,
+                            "🏆 " + kazananRenk + " oyuncu oyunu kazandı!",
+                            "Tebrikler", JOptionPane.INFORMATION_MESSAGE);
+
+                    client.mesajGonder("BITIS:" + oyuncuNumarasi);
+                    zarAtButton.setEnabled(false);
+                }
+
+                break;
             }
-
-            client.mesajGonder("CIKAR:" + ucgenNo + "," + i);
-            tasListesi.removeIf(t -> t.getButon() == btn);
-            butonlar[ucgenNo][i] = null;
-            System.out.println("📤 Taş listeden çıkarıldı.");
-
-            // 🏁 Oyun bitti mi kontrolü
-            if (tasListesi.isEmpty()) {
-                System.out.println("🎉 Tüm taşlar çıkarıldı! Oyuncu " + oyuncuNumarasi + " kazandı!");
-
-                String kazananRenk = (oyuncuNumarasi == 1) ? "Siyah" : "Beyaz";
-                JOptionPane.showMessageDialog(null,
-                    "🏆 " + kazananRenk + " oyuncu oyunu kazandı!",
-                    "Tebrikler", JOptionPane.INFORMATION_MESSAGE);
-
-                client.mesajGonder("BITIS:" + oyuncuNumarasi);
-                zarAtButton.setEnabled(false);
-            }
-
-            break;
         }
     }
-}
 
     /**
      * This method is called from within the constructor to initialize the form.
