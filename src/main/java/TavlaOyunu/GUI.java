@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package com.mycompany.networkproject;
+package TavlaOyunu;
 
 import java.awt.Button;
 import java.awt.Color;
@@ -39,7 +39,7 @@ public class GUI extends javax.swing.JFrame {
     int ilkZar1 = 0;
     int ilkZar2 = 0;
 
-    //private java.awt.Button secilenButon = null; // BURAYA EKLE sonradan ekledim
+   
     private ArrayList<Tas> siyahTaslar = new ArrayList<>();
     private ArrayList<Tas> beyazTaslar = new ArrayList<>();
 
@@ -143,7 +143,19 @@ public class GUI extends javax.swing.JFrame {
 
         // Client başlat
         client = new Client(this);
-        client.connect("localhost", 12345);
+        client.connect("13.51.172.233", 12345);//13.51.172.233
+
+        // 🔌 Pencere kapanınca sunucuya çıkış mesajı gönder
+        this.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                if (client != null) {
+                    client.mesajGonder("CIKIS");
+                    System.out.println("📤 CIKIS mesajı gönderildi.");
+                }
+            }
+        });
+
     }
 
     private void tasSecmeVeTasimaAyarlariniYap() {
@@ -588,6 +600,12 @@ public class GUI extends javax.swing.JFrame {
             } else {
                 System.exit(0);
             }
+        } else if (mesaj.equals("RAKIP_CIKTI")) {
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ Rakip oyuncu oyundan ayrıldı.\nOyun kapatılacak.",
+                    "Bağlantı Kesildi", JOptionPane.WARNING_MESSAGE);
+            this.dispose();  // pencereyi kapat
+            System.exit(0);  // tamamen çık
         }
 
     }
@@ -606,11 +624,11 @@ public class GUI extends javax.swing.JFrame {
 
         for (Tas tas : taslar) {
             int ucgenNo = tas.getUcgenNo();
-            System.out.println("📍 Taş bulundu: üçgen " + ucgenNo);
+            System.out.println(" Taş bulundu: üçgen " + ucgenNo);
 
             if (oyuncuNo == 1) {
                 if (ucgenNo < 0 || ucgenNo > 5) {
-                    System.out.println("❌ Siyah taş evde değil: " + ucgenNo);
+                    System.out.println(" Siyah taş evde değil: " + ucgenNo);
                     return false;
                 }
             }
@@ -783,9 +801,7 @@ public class GUI extends javax.swing.JFrame {
         jLabelbar1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMaximumSize(new java.awt.Dimension(600, 500));
         setMinimumSize(new java.awt.Dimension(612, 545));
-        setPreferredSize(new java.awt.Dimension(613, 545));
         getContentPane().setLayout(null);
 
         jLayeredPane1.setFocusable(false);

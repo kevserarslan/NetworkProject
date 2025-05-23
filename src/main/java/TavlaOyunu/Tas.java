@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.mycompany.networkproject;
+package TavlaOyunu;
 
 import java.awt.Button;
 import java.awt.Color;
@@ -61,26 +61,12 @@ public class Tas {
     }
 }
 
-//    public void tasGorunurYap() {
-//        System.out.println("🔍 Taş görünür yapılıyor: Üçgen " + ucgenNo + ", Pozisyon " + pozisyonNo);
-//        buton.setVisible(true);
-//    }
+
 
     public void tasGizle() {
     buton.setBackground(null); // Arka planı sıfırla
-    // İstersen ikon vs. varsa kaldırabilirsin: buton.setIcon(null);
+   
     // Ama görünmez yapma!
 }
-//  public int getPozisyon(Button[][] butonlar) {
-//    for (int i = 0; i < 5; i++) {
-//        if (butonlar[ucgenNo][i] == this.buton) return i;
-//    }
-//    return -1;
-//}
 
-
-
-//    public void tasGizle() {
-//        buton.setVisible(false);
-//    }
 }

@@ -3,7 +3,7 @@
 // * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
 // */
 // ✅ GameRoom.java (Sunucu)
-package com.mycompany.networkproject;
+package TavlaOyunu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -75,6 +75,12 @@ public class GameRoom implements Runnable {
 
                 Thread.sleep(50);
             }
+        } catch (IOException ex) {
+            if (!"NORMAL_CIKIS".equals(ex.getMessage())) {
+                ex.printStackTrace(); //  Sadece beklenmeyen hataları göster
+            } else {
+                System.out.println("ℹ️ Oyuncu pencereyi kapattı, bağlantı sonlandırıldı.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -108,7 +114,7 @@ public class GameRoom implements Runnable {
                 }
 
             } else if (msg.equals("HAMLE_BITTI")) {
-                // 🟢 Oyuncu hamlesini bitirdi → sırayı rakibe geçir
+                // Oyuncu hamlesini bitirdi → sırayı rakibe geçir
                 //sender.println("SIRA:0");               // kendi pasif
                 int rakip = (oyuncuNo == 1) ? 2 : 1;
                 sender.println("SIRA:0");
@@ -121,9 +127,14 @@ public class GameRoom implements Runnable {
                 System.out.println("➡ HAMLE mesajı iletildi: " + msg);
                 receiver.println(msg); // karşı oyuncuya ilet
             } else if (msg.startsWith("BITIS:")) {
-                System.out.println("🏁 BITIS mesajı geldi: " + msg);
+                System.out.println(" BITIS mesajı geldi: " + msg);
                 receiver.println(msg);  // Diğer oyuncuya ilet
                 sender.println(msg);    // Kendisine tekrar gönder (GUI tetiklensin)
+            } else if (msg.equals("CIKIS")) {
+                System.out.println(" Oyuncu " + oyuncuNo + " çıkış yaptı.");
+                receiver.println("RAKIP_CIKTI");
+                // Bu client kapatıldıktan sonra döngü dışına çıkmak için IOException fırlat
+                throw new IOException("NORMAL_CIKIS");
             } else {
                 System.out.println("➡ Genel mesaj iletildi: " + msg);
                 receiver.println(msg); // diğer tüm mesajları aynen aktar
